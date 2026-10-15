@@ -1,0 +1,412 @@
+@import "tailwindcss";
+
+@theme {
+  --color-brand-50: #fff7ed;
+  --color-brand-100: #ffedd5;
+  --color-brand-200: #fed7aa;
+  --color-brand-300: #fdba74;
+  --color-brand-400: #fb923c;
+  --color-brand-500: #f97316;
+  --color-brand-600: #ea580c;
+  --color-brand-700: #c2410c;
+  --color-cream: #fff9f3;
+  --color-ink: #1f1a17;
+  --font-display: "Playfair Display", Georgia, "Times New Roman", serif;
+  --font-sans:
+    "Inter", ui-sans-serif, system-ui, -apple-system, "Segoe UI", Roboto,
+    sans-serif;
+}
+
+html,
+body {
+  min-height: 100%;
+}
+
+html {
+  scroll-behavior: smooth;
+}
+
+body {
+  background-color: var(--color-cream);
+  color: var(--color-ink);
+  font-family: var(--font-sans);
+  background-image:
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(253, 186, 116, 0.26),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(254, 215, 170, 0.3),
+      transparent 28%
+    ),
+    radial-gradient(circle at 60% 0%, rgba(187, 222, 170, 0.2), transparent 22%);
+  background-attachment: fixed;
+}
+
+.font-display {
+  font-family: var(--font-display);
+}
+
+.card {
+  @apply rounded-2xl border border-orange-100 bg-white shadow-[0_8px_30px_rgba(234,88,12,0.06)];
+}
+
+.scrollbar-thin::-webkit-scrollbar {
+  width: 6px;
+  height: 6px;
+}
+.scrollbar-thin::-webkit-scrollbar-thumb {
+  background: #fed7aa;
+  border-radius: 999px;
+}
+
+.leaf {
+  position: absolute;
+  border-radius: 100% 0 100% 0;
+  opacity: 0.8;
+  pointer-events: none;
+}
+
+@keyframes fade-up {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-fade-up {
+  animation: fade-up 720ms cubic-bezier(0.22, 0.65, 0.32, 1) both;
+}
+
+@keyframes toast-in {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-toast {
+  animation: toast-in 380ms cubic-bezier(0.2, 0.7, 0.3, 1) both;
+}
+
+@keyframes pop-in {
+  0% {
+    opacity: 0;
+    transform: translateY(14px) scale(0.98);
+  }
+  100% {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-pop-in {
+  animation: pop-in 820ms cubic-bezier(0.2, 0.65, 0.3, 1) both;
+}
+
+/* Ingredient flowchart: ingredients travel outward from the central dish. */
+@keyframes flow-dish {
+  from {
+    opacity: 0;
+    transform: translate(-50%, -50%) scale(0.88);
+  }
+  to {
+    opacity: 1;
+    transform: translate(-50%, -50%) scale(1);
+  }
+}
+.flow-dish-enter {
+  animation: flow-dish 1050ms cubic-bezier(0.2, 0.65, 0.3, 1) both;
+}
+@keyframes flow-node {
+  from {
+    opacity: 0;
+    transform: translate(var(--fx), var(--fy)) scale(0.72);
+  }
+  to {
+    opacity: 1;
+    transform: translate(0, 0) scale(1);
+  }
+}
+.flow-node-enter {
+  animation: flow-node 1150ms cubic-bezier(0.2, 0.68, 0.32, 1) var(--delay, 0ms)
+    both;
+}
+@keyframes flow-line {
+  from {
+    opacity: 0;
+    stroke-dashoffset: 320;
+  }
+  to {
+    opacity: 1;
+    stroke-dashoffset: 0;
+  }
+}
+.flow-line-enter {
+  animation: flow-line 1350ms ease-in-out var(--delay, 0ms) both;
+}
+@keyframes flow-orbit {
+  from {
+    transform: translate(-50%, -50%) rotate(0deg);
+  }
+  to {
+    transform: translate(-50%, -50%) rotate(360deg);
+  }
+}
+.flow-orbit {
+  animation: flow-orbit 110s linear infinite;
+}
+@keyframes flow-halo {
+  0%,
+  100% {
+    opacity: 0.45;
+    transform: translate(-50%, -50%) scale(1);
+  }
+  50% {
+    opacity: 0.7;
+    transform: translate(-50%, -50%) scale(1.04);
+  }
+}
+.flow-halo {
+  animation: flow-halo 7s ease-in-out infinite;
+}
+
+@keyframes title-rise {
+  from {
+    opacity: 0;
+    transform: translateY(9px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+.animate-title {
+  animation: title-rise 750ms cubic-bezier(0.22, 0.65, 0.32, 1) both;
+}
+
+@keyframes sheet-in {
+  from {
+    opacity: 0;
+    transform: translateY(18px) scale(0.99);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0) scale(1);
+  }
+}
+.animate-sheet-in {
+  animation: sheet-in 460ms cubic-bezier(0.2, 0.65, 0.3, 1) both;
+}
+
+.animate-shine {
+  opacity: 0;
+}
+.group:hover .animate-shine {
+  opacity: 0.75;
+  transform: translateX(350%) skewX(-18deg);
+  transition:
+    transform 900ms ease,
+    opacity 900ms ease;
+}
+
+button,
+a {
+  -webkit-tap-highlight-color: transparent;
+}
+
+/* ---------- dark theme ----------
+   Components use the light palette utilities directly; the .dark scope remaps
+   those tokens to a warm charcoal palette so every surface follows the theme. */
+.dark {
+  --dk-bg: #141110;
+  --dk-surface: #1e1917;
+  --dk-surface-2: #2a2320;
+  --dk-surface-3: #362d28;
+  --dk-border: #3a302a;
+  --dk-border-2: #4a3d35;
+  --dk-text: #f4ece4;
+  --dk-text-2: #d8ccc1;
+  --dk-text-3: #b7a89b;
+  --dk-text-4: #8e8176;
+  --dk-text-5: #6d6259;
+  color-scheme: dark;
+}
+.dark body {
+  background-color: var(--dk-bg);
+  color: var(--dk-text);
+  background-image:
+    radial-gradient(
+      circle at 0% 100%,
+      rgba(249, 115, 22, 0.14),
+      transparent 32%
+    ),
+    radial-gradient(
+      circle at 100% 0%,
+      rgba(251, 146, 60, 0.12),
+      transparent 28%
+    ),
+    radial-gradient(circle at 60% 0%, rgba(132, 204, 22, 0.06), transparent 22%);
+}
+.dark .card {
+  background-color: var(--dk-surface);
+  border-color: var(--dk-border);
+  box-shadow: 0 8px 30px rgba(0, 0, 0, 0.35);
+}
+/* surfaces */
+.dark .bg-white,
+.dark .bg-\[\#fffdf9\] {
+  background-color: var(--dk-surface);
+}
+.dark .bg-white\/95,
+.dark .bg-white\/90 {
+  background-color: rgba(30, 25, 23, 0.94);
+}
+.dark .bg-white\/70 {
+  background-color: rgba(30, 25, 23, 0.7);
+}
+.dark .hover\:bg-white\/70:hover {
+  background-color: rgba(42, 35, 32, 0.8);
+}
+.dark .bg-orange-50,
+.dark .bg-brand-50,
+.dark .bg-orange-50\/60,
+.dark .bg-orange-50\/50,
+.dark .hover\:bg-orange-50:hover,
+.dark .hover\:bg-brand-50:hover {
+  background-color: var(--dk-surface-2);
+}
+.dark .bg-orange-100,
+.dark .bg-brand-100,
+.dark .hover\:bg-orange-100:hover,
+.dark .hover\:bg-brand-100:hover {
+  background-color: var(--dk-surface-3);
+}
+.dark .bg-cream {
+  background-color: var(--dk-bg);
+}
+.dark .bg-ink {
+  background-color: #3a302a;
+}
+.dark .from-orange-50 {
+  --tw-gradient-from: var(--dk-surface-2);
+}
+.dark .to-brand-100 {
+  --tw-gradient-to: var(--dk-surface-3);
+}
+.dark .bg-green-50 {
+  background-color: rgba(22, 101, 52, 0.25);
+}
+.dark .bg-green-100 {
+  background-color: rgba(22, 101, 52, 0.35);
+}
+.dark .bg-red-50 {
+  background-color: rgba(153, 27, 27, 0.25);
+}
+.dark .bg-amber-100 {
+  background-color: rgba(146, 64, 14, 0.4);
+}
+/* borders */
+.dark .border-orange-100,
+.dark .border-white\/70,
+.dark .border-white\/80 {
+  border-color: var(--dk-border);
+}
+.dark .border-orange-200,
+.dark .border-brand-200,
+.dark .hover\:border-brand-200:hover {
+  border-color: var(--dk-border-2);
+}
+.dark .border-green-200 {
+  border-color: rgba(34, 197, 94, 0.35);
+}
+.dark .border-red-100 {
+  border-color: rgba(248, 113, 113, 0.35);
+}
+.dark .divide-orange-50 > :not(:last-child),
+.dark .divide-orange-100 > :not(:last-child) {
+  border-color: var(--dk-border);
+}
+.dark .ring-white {
+  --tw-ring-color: var(--dk-surface-2);
+}
+.dark .ring-offset-0 {
+  --tw-ring-offset-color: var(--dk-surface);
+}
+/* text */
+.dark .text-ink,
+.dark .hover\:text-ink:hover {
+  color: var(--dk-text);
+}
+.dark .text-stone-700 {
+  color: var(--dk-text-2);
+}
+.dark .text-stone-600 {
+  color: var(--dk-text-3);
+}
+.dark .text-stone-500 {
+  color: var(--dk-text-4);
+}
+.dark .text-stone-400 {
+  color: var(--dk-text-5);
+}
+.dark .text-green-800,
+.dark .text-green-700 {
+  color: #86efac;
+}
+.dark .text-red-700 {
+  color: #fca5a5;
+}
+.dark .text-amber-800 {
+  color: #fcd34d;
+}
+.dark .text-brand-700 {
+  color: #fdba74;
+}
+.dark .placeholder\:text-stone-400::placeholder {
+  color: var(--dk-text-5);
+}
+/* focus + shadows */
+.dark .focus\:ring-orange-100:focus {
+  --tw-ring-color: rgba(249, 115, 22, 0.25);
+}
+.dark .shadow-orange-200,
+.dark .shadow-orange-200\/70,
+.dark .shadow-orange-200\/60 {
+  --tw-shadow-color: rgba(249, 115, 22, 0.25);
+}
+.dark .scrollbar-thin::-webkit-scrollbar-thumb {
+  background: var(--dk-border-2);
+}
+.dark input,
+.dark textarea,
+.dark select {
+  color: var(--dk-text);
+}
+.dark select option {
+  background-color: var(--dk-surface);
+}
+.dark img {
+  filter: brightness(0.94);
+}
+.dark .leaf {
+  opacity: 0.25;
+}
+
+@media (prefers-reduced-motion: reduce) {
+  *,
+  *::before,
+  *::after {
+    scroll-behavior: auto !important;
+    animation-duration: 1ms !important;
+    animation-iteration-count: 1 !important;
+    transition-duration: 1ms !important;
+  }
+}
