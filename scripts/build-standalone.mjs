@@ -464,6 +464,7 @@ function buildHtml(imagePrefix) {
     <meta name="viewport" content="width=device-width, initial-scale=1" />
     <title>Flavour Forge — Cook Today, Create Tomorrow</title>
     <meta name="description" content="Discover delicious recipes, shop ingredients and cook your favourite meals with ease." />
+    <link rel="icon" type="image/png" href="public/favicon.png" />
     <script>${themeScript}</script>
     <script src="https://cdn.jsdelivr.net/npm/@tailwindcss/browser@4"></script>
     <style type="text/tailwindcss">

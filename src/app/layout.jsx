@@ -3,6 +3,10 @@ import "./globals.css";
 export const metadata = {
   title: "Flavour Forge — Cook Today, Create Tomorrow",
   description: "Discover delicious recipes, shop ingredients and cook your favourite meals with ease.",
+  icons: {
+    icon: "/favicon.png",
+    apple: "/favicon.png",
+  },
 };
 
 // Applies the persisted theme before React hydrates so there is no flash of the wrong theme.
