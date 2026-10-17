@@ -30,6 +30,7 @@ export async function hashPassword(password) {
 }
 
 export async function verifyPassword(password, encoded) {
+  if (typeof encoded !== "string") return false;
   const [algorithm, salt, storedHex] = encoded.split("$");
   if (algorithm !== "scrypt" || !salt || !storedHex) return false;
   const expected = Buffer.from(storedHex, "hex");
@@ -51,7 +52,12 @@ export async function getCurrentUser(request) {
   const token = cookieToken(request);
   if (!token) return null;
   const [row] = await db
-    .select({ id: users.id, fullName: users.fullName, email: users.email })
+    .select({
+      id: users.id,
+      fullName: users.fullName,
+      email: users.email,
+      firebaseUid: users.firebaseUid,
+    })
     .from(sessions)
     .innerJoin(users, eq(users.id, sessions.userId))
     .where(and(eq(sessions.tokenHash, hashToken(token)), gt(sessions.expiresAt, new Date())))

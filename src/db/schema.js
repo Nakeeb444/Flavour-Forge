@@ -125,10 +125,11 @@ export const users = pgTable("users", {
   id: serial("id").primaryKey(),
   fullName: text("full_name").notNull(),
   email: text("email").notNull().unique(),
-  passwordHash: text("password_hash").notNull(),
+  passwordHash: text("password_hash"),
+  firebaseUid: text("firebase_uid"),
   acceptedTermsAt: timestamp("accepted_terms_at"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+}, (t) => [uniqueIndex("users_firebase_uid_unique").on(t.firebaseUid)]);
 
 export const supportTickets = pgTable("support_tickets", {
   id: serial("id").primaryKey(),

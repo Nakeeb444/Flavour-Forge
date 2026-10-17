@@ -6,7 +6,6 @@ import {
   products,
   cartItems,
   recipeCartItems,
-  favorites,
 } from "@/db/schema";
 import { ensureSeeded } from "@/db/seed";
 import { asc, eq, inArray, sql } from "drizzle-orm";
@@ -26,10 +25,8 @@ export async function getRecipes() {
       cookTime: recipes.cookTime,
       servings: recipes.servings,
       difficulty: recipes.difficulty,
-      favId: favorites.id,
     })
     .from(recipes)
-    .leftJoin(favorites, eq(favorites.recipeId, recipes.id))
     .orderBy(asc(recipes.id));
   const ingredientRows = rows.length
     ? await db
@@ -55,10 +52,10 @@ export async function getRecipes() {
     names.push(row.name);
     namesByRecipe.set(row.recipeId, names);
   }
-  return rows.map(({ favId, ...r }) => ({
+  return rows.map((r) => ({
     ...r,
     ingredientNames: namesByRecipe.get(r.id) ?? [],
-    isFavorite: favId != null,
+    isFavorite: false,
   }));
 }
 
@@ -67,10 +64,8 @@ export async function getRecipeBySlug(slug) {
   const [r] = await db
     .select({
       recipe: recipes,
-      favId: favorites.id,
     })
     .from(recipes)
-    .leftJoin(favorites, eq(favorites.recipeId, recipes.id))
     .where(eq(recipes.slug, slug))
     .limit(1);
   if (!r) return null;
@@ -114,7 +109,7 @@ export async function getRecipeBySlug(slug) {
     cookTime: recipe.cookTime,
     servings: recipe.servings,
     difficulty: recipe.difficulty,
-    isFavorite: r.favId != null,
+    isFavorite: false,
     about: recipe.about,
     instructions: recipe.instructions,
     calories: recipe.calories,
@@ -282,20 +277,6 @@ export async function removeCartItem(id) {
 
 export async function clearCart() {
   await Promise.all([db.delete(cartItems), db.delete(recipeCartItems)]);
-}
-
-export async function toggleFavorite(recipeId) {
-  const [existing] = await db
-    .select()
-    .from(favorites)
-    .where(eq(favorites.recipeId, recipeId))
-    .limit(1);
-  if (existing) {
-    await db.delete(favorites).where(eq(favorites.id, existing.id));
-    return false;
-  }
-  await db.insert(favorites).values({ recipeId });
-  return true;
 }
 
 export async function getAllProducts() {

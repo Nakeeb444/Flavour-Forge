@@ -2,15 +2,44 @@
 
 import { useState } from "react";
 import { ArrowRight, ChefHatIcon, CloseIcon } from "@/components/ui/icons";
+import {
+  createUserWithEmailAndPassword,
+  signInWithEmailAndPassword,
+  signOut,
+  updateProfile,
+} from "firebase/auth";
+import { auth } from "@/lib/firebase-client";
 
-export function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
+export function CheckoutAuthModal({
+  onClose,
+  onAuthenticated,
+  onOpenTerms,
+  flow = "checkout",
+  initialMode = "register",
+}) {
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [mode, setMode] = useState("register");
+  const [mode, setMode] = useState(initialMode);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function createBackendSession(firebaseUser, details = {}) {
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken: await firebaseUser.getIdToken(),
+        ...details,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.user) {
+      throw new Error(data.error ?? "Could not finish setting up your account.");
+    }
+    return data.user;
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -21,19 +50,71 @@ export function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
     }
     setLoading(true);
     try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password, acceptTerms }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.user) {
-        setError(data.error ?? "We couldn’t verify those details. Please try again.");
-        return;
+      let authenticatedUser;
+      if (mode === "register") {
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
+        );
+        await updateProfile(credential.user, { displayName: fullName.trim() });
+        authenticatedUser = await createBackendSession(credential.user, {
+          fullName: fullName.trim(),
+          acceptTerms,
+        });
+      } else {
+        try {
+          const credential = await signInWithEmailAndPassword(
+            auth,
+            email.trim(),
+            password,
+          );
+          authenticatedUser = await createBackendSession(credential.user);
+        } catch (firebaseError) {
+          if (
+            !["auth/invalid-credential", "auth/user-not-found"].includes(
+              firebaseError.code,
+            )
+          ) {
+            throw firebaseError;
+          }
+
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.user) {
+            throw new Error(
+              data.error ?? "We couldn’t verify those details. Please try again.",
+            );
+          }
+          authenticatedUser = data.user;
+          try {
+            const credential = await createUserWithEmailAndPassword(
+              auth,
+              email.trim(),
+              password,
+            );
+            await updateProfile(credential.user, {
+              displayName: data.user.fullName,
+            });
+            authenticatedUser = await createBackendSession(credential.user, {
+              fullName: data.user.fullName,
+            });
+          } catch (linkError) {
+            if (linkError.code !== "auth/email-already-in-use") throw linkError;
+          }
+        }
       }
-      onAuthenticated(data.user);
-    } catch {
-      setError("Connection issue. Please try again in a moment.");
+      onAuthenticated(authenticatedUser);
+    } catch (authError) {
+      if (auth.currentUser) await signOut(auth);
+      setError(
+        authError.message ||
+          "Connection issue. Please try again in a moment.",
+      );
     } finally {
       setLoading(false);
     }
@@ -63,14 +144,20 @@ export function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-brand-600">
           <ChefHatIcon width={26} height={26} />
         </div>
-        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Flavour Forge · checkout</p>
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
+          Flavour Forge · {flow === "checkout" ? "checkout" : "profile"}
+        </p>
         <h2 id="checkout-auth-title" className="font-display mt-1 text-[30px] font-bold leading-tight text-ink">
           {mode === "register" ? "A little more flavour." : "Welcome back."}
         </h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-stone-600">
-          {mode === "register"
-            ? "Create your free account to place this order and keep your recipes and orders together."
-            : "Sign in to continue to your order and see your saved recipes."}
+          {flow === "checkout"
+            ? mode === "register"
+              ? "Create your free account to place this order and keep your recipes and orders together."
+              : "Sign in to continue to your order and see your favourites."
+            : mode === "register"
+              ? "Create your free account to save your favourite recipes and keep your orders together."
+              : "Sign in to see your orders and favourites."}
         </p>
 
         <div className="mt-6 grid grid-cols-2 rounded-xl bg-orange-50 p-1">
@@ -164,7 +251,9 @@ export function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
             disabled={loading}
             className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-wait disabled:opacity-60"
           >
-            {loading ? "One moment…" : mode === "register" ? "Create account & place order" : "Sign in & place order"}
+            {loading
+              ? "One moment…"
+              : `${mode === "register" ? "Create account" : "Sign in"}${flow === "checkout" ? " & place order" : ""}`}
             {!loading && <ArrowRight width={18} height={18} className="transition-transform duration-300 group-hover:translate-x-1" />}
           </button>
         </form>

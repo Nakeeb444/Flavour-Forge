@@ -42,6 +42,43 @@ The database connection string lives in `.env` (`DATABASE_URL`). Recipes and pro
 | `npx drizzle-kit studio`            | Browse the database                          |
 | `node scripts/build-standalone.mjs` | Regenerate `flavour-forge.html`              |
 
+## Firebase services
+
+The full Next.js app uses Firebase Authentication (email/password) for sign-in,
+Cloud Firestore for each authenticated user's favourites, Cloud Functions for
+push-notification delivery, App Check for protected Firebase requests,
+Analytics for favourite activity, and Cloud Messaging for browser
+notifications. PostgreSQL continues to store the recipe catalogue, cart,
+orders and support tickets.
+
+The Firebase project is `flavour-forge-ff313`. Its Firestore Enterprise
+database is named `default` and is located in `asia-south2` (Delhi). Set the
+following public web configuration values in the Next.js environment when
+deploying to another environment; the Firebase web API key is public client
+configuration, not a server credential:
+
+| Variable | Firebase Console value |
+| --- | --- |
+| `NEXT_PUBLIC_FIREBASE_APP_CHECK_SITE_KEY` | reCAPTCHA Enterprise site key registered for the web app in App Check |
+| `NEXT_PUBLIC_FIREBASE_VAPID_KEY` | Web Push certificate key from Cloud Messaging |
+
+The remaining `NEXT_PUBLIC_FIREBASE_*` values can override the project values
+in `src/lib/src/lib/firebase.js`. in Firebase Console, enable Email/Password Authentication, App Check for
+Firestore/Functions, Analytics, and Cloud Messaging. The Cloud Functions
+project must have the required billing plan. The push-notification action also
+requires browser notification permission.
+
+Deploy the Firebase configuration from the project root:
+
+```bash
+npx firebase-tools deploy --only auth,firestore:rules,functions --project flavour-forge-ff313
+```
+
+Review `firestore.rules` before deployment. The legacy
+PostgreSQL favourites table is no longer read by the app because those rows
+were not associated with individual users; favourites now start empty and are
+isolated by Firebase Authentication UID.
+
 ## Project layout
 
 ```

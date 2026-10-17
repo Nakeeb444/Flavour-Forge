@@ -146,7 +146,7 @@ export function LeftColumn(props) {
     return (
       <div className="animate-fade-up space-y-4">
         <h1 className="font-display flex items-center gap-2 text-[26px] font-bold">
-          <HeartIcon className="text-red-500" filled /> Saved recipes
+          <HeartIcon className="text-red-500" filled /> Favourites
         </h1>
         <RecipeGrid
           list={favs}
@@ -237,19 +237,27 @@ export function LeftColumn(props) {
         <UserIcon /> Profile
       </h1>
       <div className="card flex flex-col items-center px-4 py-8 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-200 to-brand-500 text-3xl font-bold text-white">
-          {props.user?.fullName.charAt(0).toUpperCase() ?? "G"}
+        <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand-200 to-brand-500 text-3xl font-bold text-white">
+          {props.user?.photoURL ? (
+            <img
+              src={props.user.photoURL}
+              alt={`${props.user.fullName}'s profile`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            props.user?.fullName.charAt(0).toUpperCase() ?? "G"
+          )}
         </span>
         <p className="mt-3 text-lg font-bold">
           {props.user?.fullName ?? "Guest chef"}
         </p>
         <p className="text-sm text-stone-500">
           {props.user?.email ??
-            "Create an account at checkout to save your orders."}
+            "Create a free account to save your favourite recipes and orders."}
         </p>
         <div className="mt-6 grid w-full grid-cols-3 gap-2">
           {[
-            ["Favorites", favCount],
+            ["Favourites", favCount],
             ["Orders", props.orders.length],
             ["In Cart", props.cart.count],
           ].map(([l, v]) => (
@@ -259,6 +267,20 @@ export function LeftColumn(props) {
             </div>
           ))}
         </div>
+        {props.user?.firebaseUid && (
+          <div className="mt-4 flex w-full flex-col gap-2">
+            <button
+              type="button"
+              disabled={props.notificationsBusy}
+              onClick={props.onEnableNotifications}
+              className="rounded-full border border-orange-200 px-4 py-2 text-sm font-semibold text-stone-600 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {props.notificationsBusy
+                ? "Enabling notifications…"
+                : "Enable push notifications"}
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => props.onChangeView("support")}
@@ -289,10 +311,33 @@ export function LeftColumn(props) {
             Sign out
           </button>
         ) : (
-          <p className="mt-5 max-w-xs text-xs leading-relaxed text-stone-500">
-            Your cart is ready. Create an account when you check out to keep
-            your order history here.
-          </p>
+          <div className="mt-5 w-full">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={props.onCreateAccount}
+                className="group flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 to-amber-500 px-3 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                Create account
+                <ArrowRight
+                  width={16}
+                  height={16}
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                />
+              </button>
+              <button
+                type="button"
+                onClick={props.onSignIn}
+                className="rounded-full border border-orange-200 px-3 py-3 text-sm font-bold text-brand-700 transition hover:border-brand-400 hover:bg-orange-50"
+              >
+                Sign in
+              </button>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-stone-500">
+              Save your favourite recipes and keep your order history in one
+              place.
+            </p>
+          </div>
         )}
       </div>
     </div>

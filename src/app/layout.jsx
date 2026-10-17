@@ -1,7 +1,7 @@
 import "./globals.css";
 
 export const metadata = {
-  title: "Flavour Forge — Cook Today, Create Tomorrow",
+  title: "Flavour Forge — From Cravings To Creations!",
   description: "Discover delicious recipes, shop ingredients and cook your favourite meals with ease.",
   icons: {
     icon: "/favicon.png",

@@ -120,7 +120,8 @@ const schemaSql = `
     id SERIAL PRIMARY KEY,
     full_name TEXT NOT NULL,
     email TEXT NOT NULL UNIQUE,
-    password_hash TEXT NOT NULL,
+    password_hash TEXT,
+    firebase_uid TEXT,
     accepted_terms_at TIMESTAMP,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
@@ -202,6 +203,11 @@ await pool.query(`
   CREATE TABLE IF NOT EXISTS app_migrations (
     migration_name TEXT
   )
+`);
+await pool.query(`
+  ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT;
+  ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+  CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_unique ON users(firebase_uid);
 `);
 
 if (process.env.NODE_ENV !== "production") {

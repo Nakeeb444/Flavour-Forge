@@ -19,6 +19,27 @@ import { RecipeDock } from "@/components/recipes/RecipeDock";
 import { CheckoutAuthModal } from "@/components/account/CheckoutAuthModal";
 import { TermsModal } from "@/components/support/Terms";
 import { CheckIcon, CloseIcon } from "@/components/ui/icons";
+import {
+  onAuthStateChanged,
+  signOut as firebaseSignOut,
+} from "firebase/auth";
+import {
+  collection,
+  doc,
+  getDocs,
+  runTransaction,
+  setDoc,
+} from "firebase/firestore";
+import { httpsCallable } from "firebase/functions";
+import {
+  auth,
+  enablePushNotifications,
+  firestore,
+  functions,
+  initializeAppProtection,
+  listenForForegroundMessages,
+  trackEvent,
+} from "@/lib/firebase-client";
 
 function subscribeToTheme(onChange) {
   const observer = new MutationObserver(onChange);
@@ -59,6 +80,9 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileAuthOpen, setProfileAuthOpen] = useState(false);
+  const [profileAuthMode, setProfileAuthMode] = useState("register");
+  const [notificationsBusy, setNotificationsBusy] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const theme = useSyncExternalStore(
     subscribeToTheme,
@@ -87,20 +111,120 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   }, []);
 
   useEffect(() => {
+    try {
+      initializeAppProtection();
+    } catch (error) {
+      console.error("Firebase App Check initialization failed.", error);
+      toast("Firebase App Check could not be initialized.");
+    }
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data) => {
-        if (alive) setUser(data.user);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (alive) setAuthChecked(true);
-      });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const clearFavorites = () => {
+        setRecipes((items) =>
+          items.map((item) => ({ ...item, isFavorite: false })),
+        );
+        setRecipe((item) => item && { ...item, isFavorite: false });
+      };
+
+      if (!firebaseUser) {
+        clearFavorites();
+        try {
+          const response = await fetch("/api/auth/me", { cache: "no-store" });
+          const data = await response.json();
+          if (alive) setUser(data.user);
+        } catch {
+          if (alive) setUser(null);
+        } finally {
+          if (alive) setAuthChecked(true);
+        }
+        return;
+      }
+
+      try {
+        const sessionResponse = await fetch("/api/auth/me", {
+          cache: "no-store",
+        });
+        const sessionData = await sessionResponse.json();
+        let sessionUser =
+          sessionData.user?.firebaseUid === firebaseUser.uid
+            ? sessionData.user
+            : null;
+
+        if (!sessionUser) {
+          const response = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              idToken: await firebaseUser.getIdToken(),
+              fullName: firebaseUser.displayName ?? "",
+            }),
+          });
+          const data = await response.json();
+          if (response.ok && data.user) {
+            sessionUser = data.user;
+          } else if (!response.ok && response.status !== 404) {
+            toast(data.error ?? "Could not verify your account with the app server.");
+          }
+        }
+        if (sessionUser && alive) setUser(sessionUser);
+      } catch (error) {
+        if (alive) {
+          console.error("Could not synchronize the Firebase session.", error);
+          toast("Could not verify your account with the app server.");
+        }
+      }
+
+      try {
+        const snapshot = await getDocs(
+          collection(firestore, "users", firebaseUser.uid, "favorites"),
+        );
+        const favoriteIds = new Set(
+          snapshot.docs.map((favorite) => favorite.data().recipeId),
+        );
+        if (alive) {
+          setRecipes((items) =>
+            items.map((item) => ({
+              ...item,
+              isFavorite: favoriteIds.has(item.id),
+            })),
+          );
+          setRecipe((item) =>
+            item && { ...item, isFavorite: favoriteIds.has(item.id) },
+          );
+        }
+      } catch (error) {
+        clearFavorites();
+        if (alive) {
+          console.error("Could not load Firebase favourites.", error);
+          toast(
+            error.code === "permission-denied"
+              ? "Firebase denied access to your favourites. Check Firestore rules."
+              : "Could not load Favourites from Firebase.",
+          );
+        }
+      }
+
+      if (alive) setAuthChecked(true);
+    });
     return () => {
       alive = false;
+      unsubscribe();
     };
-  }, []);
+  }, [toast]);
+
+  useEffect(() => {
+    let unsubscribe;
+    listenForForegroundMessages((payload) => {
+      toast(payload.notification?.body ?? "You have a new Flavour Forge update.");
+    })
+      .then((stopListening) => {
+        unsubscribe = stopListening;
+      })
+      .catch(() => {
+        console.error("Could not attach the Firebase messaging listener.");
+      });
+    return () => unsubscribe?.();
+  }, [toast]);
 
   useEffect(() => {
     if (view === "orders" || view === "profile") {
@@ -174,60 +298,56 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
 
   const toggleFavorite = useCallback(
     async (recipeId) => {
-      setRecipes((items) =>
-        items.map((item) =>
-          item.id === recipeId
-            ? { ...item, isFavorite: !item.isFavorite }
-            : item,
-        ),
-      );
-      setRecipe((item) =>
-        item && item.id === recipeId
-          ? { ...item, isFavorite: !item.isFavorite }
-          : item,
-      );
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        toast("Sign in to add recipes to Favourites.");
+        setAuthOpen(true);
+        return;
+      }
+
       try {
-        const response = await fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recipeId }),
+        const favoriteRef = doc(
+          firestore,
+          "users",
+          firebaseUser.uid,
+          "favorites",
+          recipes.find((item) => item.id === recipeId)?.slug ?? String(recipeId),
+        );
+        const isFavorite = await runTransaction(firestore, async (transaction) => {
+          const existing = await transaction.get(favoriteRef);
+          if (existing.exists()) {
+            transaction.delete(favoriteRef);
+            return false;
+          }
+          const selected = recipes.find((item) => item.id === recipeId);
+          if (!selected) throw new Error("Recipe is no longer available.");
+          transaction.set(favoriteRef, { recipeId, slug: selected.slug });
+          return true;
         });
-        if (!response.ok) throw new Error("Favorite request failed");
-        const data = await response.json();
         setRecipes((items) =>
           items.map((item) =>
             item.id === recipeId
-              ? { ...item, isFavorite: data.isFavorite }
+              ? { ...item, isFavorite }
               : item,
           ),
         );
         setRecipe((item) =>
           item && item.id === recipeId
-            ? { ...item, isFavorite: data.isFavorite }
+            ? { ...item, isFavorite }
             : item,
         );
         toast(
-          data.isFavorite
+          isFavorite
             ? "Saved to your favourites"
             : "Removed from favourites",
         );
-      } catch {
-        setRecipes((items) =>
-          items.map((item) =>
-            item.id === recipeId
-              ? { ...item, isFavorite: !item.isFavorite }
-              : item,
-          ),
-        );
-        setRecipe((item) =>
-          item && item.id === recipeId
-            ? { ...item, isFavorite: !item.isFavorite }
-            : item,
-        );
-        toast("Could not update favourites.");
+        void trackEvent("favorite_updated", { is_favorite: isFavorite });
+      } catch (error) {
+        console.error("Could not update the Firebase favourite.", error);
+        toast("Could not update Favourites. Please try again.");
       }
     },
-    [toast],
+    [recipes, toast],
   );
 
   const cartRequest = useCallback(
@@ -349,14 +469,64 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
     [placeOrder, toast],
   );
 
-  const signOut = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      setUser(null);
-      setOrders([]);
-      toast("You have signed out.");
+  const authenticateFromProfile = useCallback(
+    (authenticatedUser) => {
+      setUser(authenticatedUser);
+      setProfileAuthOpen(false);
+      toast(`Welcome, ${authenticatedUser.fullName.split(" ")[0]}. Your account is ready.`);
+    },
+    [toast],
+  );
+
+  const enableNotifications = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      toast("Sign in with your Firebase account to enable notifications.");
+      return;
     }
+
+    setNotificationsBusy(true);
+    try {
+      const { token, tokenHash } = await enablePushNotifications();
+      await setDoc(
+        doc(firestore, "users", firebaseUser.uid, "devices", tokenHash),
+        { token },
+      );
+      const sendTestNotification = httpsCallable(
+        functions,
+        "sendTestNotification",
+      );
+      await sendTestNotification();
+      toast("Notifications are enabled. Check your browser notifications.");
+    } catch (error) {
+      console.error("Could not enable Firebase notifications.", error);
+      toast(error.message ?? "Could not enable notifications.");
+    } finally {
+      setNotificationsBusy(false);
+    }
+  }, [toast]);
+
+  const signOut = useCallback(async () => {
+    let signOutError;
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      signOutError = error;
+    }
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("The server session could not be cleared.");
+    } catch (error) {
+      signOutError ??= error;
+    }
+    if (signOutError) {
+      console.error("Could not clear all authentication sessions.", signOutError);
+      toast("Could not fully sign out. Please try again.");
+      return;
+    }
+    setUser(null);
+    setOrders([]);
+    toast("You have signed out.");
   }, [toast]);
 
   return (
@@ -411,6 +581,16 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
               onAddProduct={(id, quantity) => addProduct(id, quantity)}
               user={user}
               onSignOut={signOut}
+              onCreateAccount={() => {
+                setProfileAuthMode("register");
+                setProfileAuthOpen(true);
+              }}
+              onSignIn={() => {
+                setProfileAuthMode("login");
+                setProfileAuthOpen(true);
+              }}
+              onEnableNotifications={enableNotifications}
+              notificationsBusy={notificationsBusy}
               onToast={toast}
               onOpenTerms={() => setTermsOpen(true)}
               busy={busy}
@@ -491,6 +671,15 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
         <CheckoutAuthModal
           onClose={() => setAuthOpen(false)}
           onAuthenticated={authenticateAndCheckout}
+          onOpenTerms={() => setTermsOpen(true)}
+        />
+      )}
+      {profileAuthOpen && (
+        <CheckoutAuthModal
+          flow="profile"
+          initialMode={profileAuthMode}
+          onClose={() => setProfileAuthOpen(false)}
+          onAuthenticated={authenticateFromProfile}
           onOpenTerms={() => setTermsOpen(true)}
         />
       )}

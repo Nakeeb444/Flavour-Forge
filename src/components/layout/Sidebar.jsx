@@ -22,7 +22,7 @@ export function Logo({ onHome }) {
         <span className="text-ink">Flavour</span>{" "}
         <span className="text-brand-500">Forge</span>
       </p>
-      <p className="text-[10px] text-stone-500">Cook Today, Create Tomorrow</p>
+      <p className="text-[10px] text-stone-500">From Cravings To Creations!</p>
     </button>
   );
 }

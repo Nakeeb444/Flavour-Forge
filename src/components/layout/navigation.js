@@ -34,8 +34,8 @@ export const NAV_GROUPS = [
       { key: "orders", label: "My Orders", compact: "Orders", icon: BoxIcon },
       {
         key: "favorites",
-        label: "Saved recipes",
-        compact: "Saved recipes",
+        label: "Favourites",
+        compact: "Favourites",
         icon: HeartIcon,
       },
       { key: "profile", label: "Profile", compact: "Profile", icon: UserIcon },
