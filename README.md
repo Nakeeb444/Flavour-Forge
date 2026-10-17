@@ -2,7 +2,6 @@
   <h1>Flavour Forge</h1>
   <p><strong>Find a recipe. Gather what you need. Make something good.</strong></p>
   <p>A recipe discovery and ingredient-shopping app built around the pleasure of cooking.</p>
-  <img src="./public/images/chicken-biryani.jpg" alt="Chicken biryani from the Flavour Forge recipe collection" width="680" />
 </div>
 
 ## What you can do
