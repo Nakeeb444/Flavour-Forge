@@ -1,35 +1,130 @@
 <!doctype html>
 <html lang="en">
-<head>
-<meta charset="utf-8" />
-<meta name="viewport" content="width=device-width, initial-scale=1" />
-<title>Download Flavour Forge</title>
-<style>
-  body{margin:0;min-height:100vh;display:grid;place-items:center;font-family:Inter,system-ui,-apple-system,"Segoe UI",sans-serif;background:#fff9f3;color:#1f1a17;
-       background-image:radial-gradient(circle at 0% 100%,rgba(253,186,116,.3),transparent 32%),radial-gradient(circle at 100% 0%,rgba(254,215,170,.3),transparent 28%)}
-  .card{width:min(92vw,560px);background:#fff;border:1px solid #ffedd5;border-radius:24px;padding:36px;box-shadow:0 20px 60px rgba(234,88,12,.1)}
-  h1{margin:0 0 6px;font-size:28px}h1 span{color:#f97316}
-  p{color:#6b625b;line-height:1.55;margin:0 0 18px}
-  a.btn{display:inline-flex;align-items:center;gap:10px;background:linear-gradient(90deg,#f97316,#ea580c);color:#fff;text-decoration:none;font-weight:700;padding:14px 22px;border-radius:14px;box-shadow:0 10px 30px rgba(249,115,22,.3)}
-  a.btn:hover{filter:brightness(1.05)}
-  ul{margin:22px 0 0;padding:0;list-style:none;display:grid;gap:8px;font-size:14px;color:#44403c}
-  li::before{content:"✓";color:#16a34a;font-weight:700;margin-right:8px}
-  code{background:#fff7ed;border:1px solid #ffedd5;border-radius:6px;padding:1px 6px;font-size:13px}
-  .alt{margin-top:22px;padding-top:18px;border-top:1px solid #ffedd5;font-size:14px}
-</style>
-</head>
-<body>
-  <div class="card">
-    <h1>Flavour <span>Forge</span> — full source pack</h1>
-    <p>Everything in one ZIP: organized source, all 17 recipe photos, the standalone HTML page and a README. Includes complete recipe kits in the cart, the animated ingredient flowchart and the new food-category shop.</p>
-    <a class="btn" href="/flavour-forge.zip" download>⬇ Download flavour-forge.zip (2.4 MB)</a>
-    <ul>
-      <li>Organized source: layout, recipes, shop, account, support and shared UI · complete API and database code</li>
-      <li><code>flavour-forge.html</code> — double-click to run with no install</li>
-      <li><code>README.md</code> — how to run in VS Code (Next.js + PostgreSQL)</li>
-      <li><code>.vscode/</code> settings &amp; recommended extensions included</li>
-    </ul>
-    <div class="alt">Or open the standalone page directly: <a href="/flavour-forge.html">/flavour-forge.html</a></div>
-  </div>
-</body>
+  <head>
+    <meta charset="utf-8" />
+    <meta name="viewport" content="width=device-width, initial-scale=1" />
+    <title>Download Flavour Forge</title>
+    <style>
+      body {
+        margin: 0;
+        min-height: 100vh;
+        display: grid;
+        place-items: center;
+        font-family:
+          Inter,
+          system-ui,
+          -apple-system,
+          "Segoe UI",
+          sans-serif;
+        background: #fff9f3;
+        color: #1f1a17;
+        background-image:
+          radial-gradient(
+            circle at 0% 100%,
+            rgba(253, 186, 116, 0.3),
+            transparent 32%
+          ),
+          radial-gradient(
+            circle at 100% 0%,
+            rgba(254, 215, 170, 0.3),
+            transparent 28%
+          );
+      }
+      .card {
+        width: min(92vw, 560px);
+        background: #fff;
+        border: 1px solid #ffedd5;
+        border-radius: 24px;
+        padding: 36px;
+        box-shadow: 0 20px 60px rgba(234, 88, 12, 0.1);
+      }
+      h1 {
+        margin: 0 0 6px;
+        font-size: 28px;
+      }
+      h1 span {
+        color: #f97316;
+      }
+      p {
+        color: #6b625b;
+        line-height: 1.55;
+        margin: 0 0 18px;
+      }
+      a.btn {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+        background: linear-gradient(90deg, #f97316, #ea580c);
+        color: #fff;
+        text-decoration: none;
+        font-weight: 700;
+        padding: 14px 22px;
+        border-radius: 14px;
+        box-shadow: 0 10px 30px rgba(249, 115, 22, 0.3);
+      }
+      a.btn:hover {
+        filter: brightness(1.05);
+      }
+      ul {
+        margin: 22px 0 0;
+        padding: 0;
+        list-style: none;
+        display: grid;
+        gap: 8px;
+        font-size: 14px;
+        color: #44403c;
+      }
+      li::before {
+        content: "✓";
+        color: #16a34a;
+        font-weight: 700;
+        margin-right: 8px;
+      }
+      code {
+        background: #fff7ed;
+        border: 1px solid #ffedd5;
+        border-radius: 6px;
+        padding: 1px 6px;
+        font-size: 13px;
+      }
+      .alt {
+        margin-top: 22px;
+        padding-top: 18px;
+        border-top: 1px solid #ffedd5;
+        font-size: 14px;
+      }
+    </style>
+  </head>
+  <body>
+    <div class="card">
+      <h1>Flavour <span>Forge</span> — full source pack</h1>
+      <p>
+        Everything in one ZIP: organized source, all 17 recipe photos, the
+        standalone HTML page and a README. Includes complete recipe kits in the
+        cart, the animated ingredient flowchart and the new food-category shop.
+      </p>
+      <a class="btn" href="/flavour-forge.zip" download
+        >⬇ Download flavour-forge.zip (2.4 MB)</a
+      >
+      <ul>
+        <li>
+          Organized source: layout, recipes, shop, account, support and shared
+          UI · complete API and database code
+        </li>
+        <li>
+          <code>flavour-forge.html</code> — double-click to run with no install
+        </li>
+        <li>
+          <code>README.md</code> — how to run in VS Code (Next.js + PostgreSQL)
+        </li>
+        <li>
+          <code>.vscode/</code> settings &amp; recommended extensions included
+        </li>
+      </ul>
+      <div class="alt">
+        Or open the standalone page directly:
+        <a href="/flavour-forge.html">/flavour-forge.html</a>
+      </div>
+    </div>
+  </body>
 </html>

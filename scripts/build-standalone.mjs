@@ -462,7 +462,7 @@ function buildHtml(imagePrefix) {
   <head>
     <meta charset="utf-8" />
     <meta name="viewport" content="width=device-width, initial-scale=1" />
-    <title>Flavour Forge — Cook Today, Create Tomorrow</title>
+    <title>Flavour Forge — From Cravings To Creations!</title>
     <meta name="description" content="Discover delicious recipes, shop ingredients and cook your favourite meals with ease." />
     <link rel="icon" type="image/png" href="public/favicon.png" />
     <script>${themeScript}</script>
