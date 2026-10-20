@@ -62,7 +62,7 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("Vegetarian");
+  const [filter, setFilter] = useState("All");
   const [recipes, setRecipes] = useState(initialRecipes);
   const [recipe, setRecipe] = useState(initialRecipe);
   const [recipeOpen, setRecipeOpen] = useState(false);
@@ -100,6 +100,7 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   }, [theme]);
   const [toasts, setToasts] = useState([]);
   const toastId = useRef(0);
+  const checkoutKey = useRef(null);
 
   const toast = useCallback((message) => {
     const id = ++toastId.current;
@@ -133,7 +134,10 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
           const data = await response.json();
           if (alive) setUser(data.user);
         } catch {
-          if (alive) setUser(null);
+          if (alive) {
+            console.error("Could not load the signed-in account.");
+            setUser(null);
+          }
         } finally {
           if (alive) setAuthChecked(true);
         }
@@ -229,17 +233,50 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   useEffect(() => {
     if (view === "orders" || view === "profile") {
       fetch("/api/orders", { cache: "no-store" })
-        .then((r) => r.json())
+        .then((response) => {
+          if (!response.ok) throw new Error("Could not load orders.");
+          return response.json();
+        })
         .then(setOrders)
-        .catch(() => {});
+        .catch((error) => {
+          console.error("Could not load account orders.", error);
+          toast("Could not load your orders. Please try again.");
+        });
     }
     if (view === "shop" && shopProducts.length === 0) {
-      fetch("/api/products")
-        .then((r) => r.json())
+      fetch("/api/products", { cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error("Could not load shop products.");
+          return response.json();
+        })
         .then(setShopProducts)
-        .catch(() => {});
+        .catch((error) => {
+          console.error("Could not load shop products.", error);
+          toast("Could not load shop items. Please try again.");
+        });
     }
-  }, [view, shopProducts.length, user?.id]);
+  }, [view, shopProducts.length, user?.id, toast]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/cart", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load the cart.");
+        return response.json();
+      })
+      .then((data) => {
+        if (alive) setCart(data);
+      })
+      .catch((error) => {
+        if (alive) {
+          console.error("Could not synchronize the cart.", error);
+          toast("Could not load your cart. Please try again.");
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [toast]);
 
   useEffect(() => {
     if (!recipeOpen) return;
@@ -253,7 +290,8 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return recipes.filter((item) => {
-      const matchesFilter = query || recipeMatchesCategory(item, filter);
+      const matchesFilter =
+        filter === "All" || recipeMatchesCategory(item, filter);
       const matchesSearch =
         !query ||
         item.name.toLowerCase().includes(query) ||
@@ -394,8 +432,6 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
     [addProduct],
   );
 
-  const factor = recipe ? servings / recipe.servings : 1;
-
   const buyAll = useCallback(async () => {
     if (!recipe) return;
     const result = await cartRequest(
@@ -415,7 +451,12 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
   const placeOrder = useCallback(async () => {
     setBusy(true);
     try {
-      const response = await fetch("/api/orders", { method: "POST" });
+      const idempotencyKey =
+        checkoutKey.current ?? (checkoutKey.current = crypto.randomUUID());
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Idempotency-Key": idempotencyKey },
+      });
       if (response.status === 401) {
         setAuthOpen(true);
         return;
@@ -423,13 +464,17 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
       const data = await response.json();
       if (!response.ok || !data.order || !data.cart)
         throw new Error(data.error ?? "Checkout failed");
+      checkoutKey.current = null;
       setCart(data.cart);
       setOrders((current) => [data.order, ...current]);
-      toast(`Order #${data.order.id} placed. Thank you!`);
+      toast(
+        `Order request #${data.order.id} recorded. No payment was processed.`,
+      );
       setRecipeOpen(false);
       setView("orders");
-    } catch {
-      toast("Checkout could not be completed. Please try again.");
+    } catch (error) {
+      console.error("Checkout could not be completed.", error);
+      toast(error.message ?? "Checkout could not be completed. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -686,6 +731,9 @@ export function App({ initialRecipes, initialRecipe, initialCart }) {
       {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
 
       <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
         className={`pointer-events-none fixed bottom-20 left-1/2 z-[90] flex -translate-x-1/2 flex-col items-center gap-2 transition-[bottom] duration-500 ${dockVisible ? "lg:bottom-28" : "lg:bottom-6"}`}
       >
         {toasts.map((item) => (

@@ -36,7 +36,11 @@ export function CheckoutAuthModal({
     });
     const data = await response.json();
     if (!response.ok || !data.user) {
-      throw new Error(data.error ?? "Could not finish setting up your account.");
+      const error = new Error(
+        data.error ?? "Could not finish setting up your account.",
+      );
+      error.status = response.status;
+      throw error;
     }
     return data.user;
   }
@@ -69,7 +73,25 @@ export function CheckoutAuthModal({
             email.trim(),
             password,
           );
-          authenticatedUser = await createBackendSession(credential.user);
+          try {
+            authenticatedUser = await createBackendSession(credential.user);
+          } catch (sessionError) {
+            if (sessionError.status !== 409) throw sessionError;
+
+            const response = await fetch("/api/auth/login", {
+              method: "POST",
+              headers: { "Content-Type": "application/json" },
+              body: JSON.stringify({ email, password }),
+            });
+            const data = await response.json();
+            if (!response.ok || !data.user) {
+              throw new Error(
+                data.error ??
+                  "We couldn’t verify those details. Please try again.",
+              );
+            }
+            authenticatedUser = await createBackendSession(credential.user);
+          }
         } catch (firebaseError) {
           if (
             !["auth/invalid-credential", "auth/user-not-found"].includes(
@@ -87,7 +109,8 @@ export function CheckoutAuthModal({
           const data = await response.json();
           if (!response.ok || !data.user) {
             throw new Error(
-              data.error ?? "We couldn’t verify those details. Please try again.",
+              data.error ??
+                "We couldn’t verify those details. Please try again.",
             );
           }
           authenticatedUser = data.user;
@@ -112,8 +135,7 @@ export function CheckoutAuthModal({
     } catch (authError) {
       if (auth.currentUser) await signOut(auth);
       setError(
-        authError.message ||
-          "Connection issue. Please try again in a moment.",
+        authError.message || "Connection issue. Please try again in a moment.",
       );
     } finally {
       setLoading(false);
@@ -122,7 +144,7 @@ export function CheckoutAuthModal({
 
   return (
     <div
-      className="fixed inset-0 z-[80] grid place-items-center overflow-y-auto bg-stone-950/35 px-4 py-6 backdrop-blur-sm"
+      className="fixed inset-0 z-80 grid place-items-center overflow-y-auto bg-stone-950/35 px-4 py-6 backdrop-blur-sm"
       onMouseDown={(event) => {
         if (event.target === event.currentTarget) onClose();
       }}
@@ -147,14 +169,17 @@ export function CheckoutAuthModal({
         <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
           Flavour Forge · {flow === "checkout" ? "checkout" : "profile"}
         </p>
-        <h2 id="checkout-auth-title" className="font-display mt-1 text-[30px] font-bold leading-tight text-ink">
+        <h2
+          id="checkout-auth-title"
+          className="font-display mt-1 text-[30px] font-bold leading-tight text-ink"
+        >
           {mode === "register" ? "A little more flavour." : "Welcome back."}
         </h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-stone-600">
           {flow === "checkout"
             ? mode === "register"
-              ? "Create your free account to place this order and keep your recipes and orders together."
-              : "Sign in to continue to your order and see your favourites."
+              ? "Create your free account to record this order request and keep it with your account."
+              : "Sign in to record this order request and see your favourites."
             : mode === "register"
               ? "Create your free account to save your favourite recipes and keep your orders together."
               : "Sign in to see your orders and favourites."}
@@ -170,7 +195,9 @@ export function CheckoutAuthModal({
                 setError("");
               }}
               className={`rounded-lg px-3 py-2 text-sm font-semibold transition-colors duration-300 ${
-                mode === item ? "bg-white text-brand-700 shadow-sm" : "text-stone-500 hover:text-ink"
+                mode === item
+                  ? "bg-white text-brand-700 shadow-sm"
+                  : "text-stone-500 hover:text-ink"
               }`}
             >
               {item === "register" ? "Create account" : "Sign in"}
@@ -181,7 +208,9 @@ export function CheckoutAuthModal({
         <form onSubmit={submit} className="mt-5 space-y-4">
           {mode === "register" && (
             <label className="block">
-              <span className="mb-1.5 block text-sm font-semibold text-stone-700">Your name</span>
+              <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+                Your name
+              </span>
               <input
                 autoComplete="name"
                 required
@@ -195,7 +224,9 @@ export function CheckoutAuthModal({
             </label>
           )}
           <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-stone-700">Email address</span>
+            <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+              Email address
+            </span>
             <input
               autoComplete="email"
               type="email"
@@ -208,19 +239,29 @@ export function CheckoutAuthModal({
             />
           </label>
           <label className="block">
-            <span className="mb-1.5 block text-sm font-semibold text-stone-700">Password</span>
+            <span className="mb-1.5 block text-sm font-semibold text-stone-700">
+              Password
+            </span>
             <input
-              autoComplete={mode === "register" ? "new-password" : "current-password"}
+              autoComplete={
+                mode === "register" ? "new-password" : "current-password"
+              }
               type="password"
               required
               minLength={mode === "register" ? 8 : 1}
               maxLength={72}
               value={password}
               onChange={(e) => setPassword(e.target.value)}
-              placeholder={mode === "register" ? "At least 8 characters" : "Your password"}
+              placeholder={
+                mode === "register" ? "At least 8 characters" : "Your password"
+              }
               className="w-full rounded-xl border border-orange-100 bg-white px-4 py-3 text-sm outline-none transition duration-300 placeholder:text-stone-400 focus:border-brand-400 focus:ring-4 focus:ring-orange-100"
             />
-            {mode === "register" && <span className="mt-1 block text-xs text-stone-400">Use 8 or more characters.</span>}
+            {mode === "register" && (
+              <span className="mt-1 block text-xs text-stone-400">
+                Use 8 or more characters.
+              </span>
+            )}
           </label>
 
           {mode === "register" && (
@@ -229,36 +270,50 @@ export function CheckoutAuthModal({
                 type="checkbox"
                 checked={acceptTerms}
                 onChange={(e) => setAcceptTerms(e.target.checked)}
-                className="mt-0.5 h-4 w-4 shrink-0 accent-[#f97316]"
+                className="mt-0.5 h-4 w-4 shrink-0 accent-brand-500"
               />
               <span>
                 I agree to the{" "}
-                <button type="button" onClick={onOpenTerms} className="font-semibold text-brand-600 underline-offset-2 hover:underline">
+                <button
+                  type="button"
+                  onClick={onOpenTerms}
+                  className="font-semibold text-brand-600 underline-offset-2 hover:underline"
+                >
                   Terms &amp; Conditions
-                </button>{" "}
-                and Privacy Notice.
+                </button>
+                .
               </span>
             </label>
           )}
 
           {error && (
-            <p role="alert" className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700">
+            <p
+              role="alert"
+              className="rounded-xl border border-red-100 bg-red-50 px-3 py-2.5 text-sm text-red-700"
+            >
               {error}
             </p>
           )}
 
           <button
             disabled={loading}
-            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-wait disabled:opacity-60"
+            className="group flex w-full items-center justify-center gap-2 rounded-xl bg-linear-to-r from-brand-500 to-amber-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-wait disabled:opacity-60"
           >
             {loading
               ? "One moment…"
-              : `${mode === "register" ? "Create account" : "Sign in"}${flow === "checkout" ? " & place order" : ""}`}
-            {!loading && <ArrowRight width={18} height={18} className="transition-transform duration-300 group-hover:translate-x-1" />}
+              : `${mode === "register" ? "Create account" : "Sign in"}${flow === "checkout" ? " & record request" : ""}`}
+            {!loading && (
+              <ArrowRight
+                width={18}
+                height={18}
+                className="transition-transform duration-300 group-hover:translate-x-1"
+              />
+            )}
           </button>
         </form>
         <p className="mt-4 text-center text-[11px] leading-relaxed text-stone-400">
-          Your account keeps your order history and favourites together. We never store your password in plain text.
+          Your account keeps your order history and favourites together. We
+          never store your password in plain text.
         </p>
       </section>
     </div>

@@ -77,20 +77,30 @@ export const products = pgTable(
   ],
 );
 
-export const cartItems = pgTable("cart_items", {
-  id: serial("id").primaryKey(),
-  productId: integer("product_id")
-    .notNull()
-    .references(() => products.id, { onDelete: "cascade" })
-    .unique(),
-  quantity: integer("quantity").notNull().default(1),
-  createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+export const cartItems = pgTable(
+  "cart_items",
+  {
+    id: serial("id").primaryKey(),
+    productId: integer("product_id")
+      .notNull()
+      .references(() => products.id, { onDelete: "cascade" }),
+    ownerKey: text("owner_key"),
+    quantity: integer("quantity").notNull().default(1),
+    createdAt: timestamp("created_at").notNull().defaultNow(),
+  },
+  (t) => [
+    uniqueIndex("cart_items_owner_product_unique").on(
+      t.ownerKey,
+      t.productId,
+    ),
+  ],
+);
 
 export const recipeCartItems = pgTable(
   "recipe_cart_items",
   {
     id: serial("id").primaryKey(),
+    ownerKey: text("owner_key"),
     recipeId: integer("recipe_id")
       .notNull()
       .references(() => recipes.id, { onDelete: "cascade" }),
@@ -101,7 +111,8 @@ export const recipeCartItems = pgTable(
     createdAt: timestamp("created_at").notNull().defaultNow(),
   },
   (table) => [
-    uniqueIndex("recipe_cart_recipe_servings_unique").on(
+    uniqueIndex("recipe_cart_owner_recipe_servings_unique").on(
+      table.ownerKey,
       table.recipeId,
       table.servings,
     ),
@@ -156,7 +167,9 @@ export const sessions = pgTable("sessions", {
   createdAt: timestamp("created_at").notNull().defaultNow(),
 });
 
-export const orders = pgTable("orders", {
+export const orders = pgTable(
+  "orders",
+  {
   id: serial("id").primaryKey(),
   userId: integer("user_id").references(() => users.id, {
     onDelete: "set null",
@@ -166,5 +179,13 @@ export const orders = pgTable("orders", {
   total: integer("total").notNull(),
   itemCount: integer("item_count").notNull(),
   items: text("items").notNull(),
+  checkoutKey: text("checkout_key"),
   createdAt: timestamp("created_at").notNull().defaultNow(),
-});
+  },
+  (t) => [
+  uniqueIndex("orders_user_checkout_key_unique").on(
+    t.userId,
+    t.checkoutKey,
+  ),
+  ],
+);

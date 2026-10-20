@@ -6,15 +6,15 @@ const SECTIONS = [
   {
     title: "1. Acceptance of these terms",
     body: [
-      "By creating an account, browsing recipes or placing an order on Flavour Forge you agree to these Terms & Conditions and our Privacy Notice. If you do not agree, please do not use the service.",
+      "By creating an account or using Flavour Forge you agree to these Terms & Conditions. If you do not agree, please do not use the service.",
       "We may update these terms from time to time. The date at the top of this page shows when they were last revised; continued use after a change means you accept the revised terms.",
     ],
   },
   {
     title: "2. Your account",
     body: [
-      "You must be at least 18 years old to create an account and place orders. Keep your password confidential — you are responsible for all activity on your account.",
-      "Please make sure the name and email address on your account are accurate so we can send order confirmations and reach you if there is a problem.",
+      "Keep your password confidential — you are responsible for activity on your account. The app does not currently verify a user's age.",
+      "Please make sure the name and email address on your account are accurate so your account records are correct.",
     ],
   },
   {
@@ -25,24 +25,22 @@ const SECTIONS = [
     ],
   },
   {
-    title: "4. Orders, pricing and payment",
+    title: "4. Order requests and prices",
     body: [
-      "Prices are shown in Indian Rupees (₹) and include applicable taxes unless stated otherwise. The 'estimated' price on a recipe is calculated from the default product for each ingredient and may change once you choose alternatives.",
-      "An order is accepted when you receive a confirmation and it appears under My Orders. We may cancel an order if a product is unavailable, in which case you will not be charged for that item.",
+      "Prices are shown in Indian Rupees (₹). A recipe-kit estimate uses the default product for each ingredient and may change if you choose alternatives.",
+      "Submitting the cart records an order request in your account. This version does not process payments, accept fulfilment, or confirm a purchase. No payment is taken.",
     ],
   },
   {
-    title: "5. Delivery",
+    title: "5. Delivery and fulfilment",
     body: [
-      "Delivery slots and areas are shown at checkout. Fresh and frozen items are packed to stay cool in transit; please refrigerate or freeze them promptly on arrival.",
-      "If nobody is available to receive the order, our delivery partner will attempt to contact you before leaving items in a safe place.",
+      "This version does not arrange delivery or fulfil orders. Do not rely on an order request as confirmation that ingredients will be supplied.",
     ],
   },
   {
-    title: "6. Returns, refunds and problems with an order",
+    title: "6. Support requests",
     body: [
-      "If an item is missing, damaged or not as described, contact Customer Care within 24 hours of delivery with your order number. We will replace the item or refund it to your original payment method within 5–7 working days.",
-      "Perishable goods cannot be returned once delivered unless they are faulty.",
+      "The Customer Care form stores a ticket record in the app. A support inbox and reply workflow are not configured in this version, so submitting a ticket does not guarantee a response.",
     ],
   },
   {
@@ -54,8 +52,8 @@ const SECTIONS = [
   {
     title: "8. Privacy",
     body: [
-      "We collect the information needed to run your account and fulfil orders: your name, email address, order history, favourites and support messages. Passwords are stored only as salted hashes.",
-      "We never sell your personal data. You can ask us to delete your account and associated data at any time through Customer Care.",
+      "The app stores account details, order requests, favourites and support ticket records needed for its features. Passwords for accounts managed by this app are stored as salted hashes; Firebase-managed accounts are authenticated by Firebase.",
+      "Account deletion is not currently available in the app. A database operator would need to process deletion requests.",
     ],
   },
   {
@@ -67,7 +65,7 @@ const SECTIONS = [
   {
     title: "10. Contact",
     body: [
-      "Questions about these terms? Reach us via Customer Care in the app, email care@flavourforge.app, or call +91 80000 12345 (Mon–Sat, 9am–8pm IST).",
+      "The in-app Customer Care form records requests, but this version does not route them to a support team. Configure and publish a verified support contact before launch.",
     ],
   },
 ];

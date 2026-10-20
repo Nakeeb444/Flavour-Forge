@@ -3,21 +3,51 @@ import {
   removeRecipeCartItem,
   setRecipeCartQuantity,
 } from "@/lib/data";
+import { cartSessionResponse, readCartSession } from "@/lib/cart-session";
 
 export const dynamic = "force-dynamic";
 
 export async function PATCH(request, context) {
+  const session = readCartSession(request);
   const { id } = await context.params;
-  const { quantity } = await request.json();
-  const value = Number(quantity);
+  const itemId = Number(id);
+  if (!Number.isInteger(itemId) || itemId < 1)
+    return cartSessionResponse(
+      session,
+      { error: "Invalid cart item." },
+      { status: 400 },
+    );
+  let body;
+  try {
+    body = await request.json();
+  } catch {
+    return cartSessionResponse(
+      session,
+      { error: "Invalid quantity." },
+      { status: 400 },
+    );
+  }
+  const value = Number(body?.quantity);
   if (!Number.isInteger(value) || value < 0 || value > 99)
-    return Response.json({ error: "Invalid quantity" }, { status: 400 });
-  await setRecipeCartQuantity(Number(id), value);
-  return Response.json(await getCart());
+    return cartSessionResponse(
+      session,
+      { error: "Quantity must be between 0 and 99." },
+      { status: 400 },
+    );
+  await setRecipeCartQuantity(itemId, value, session.ownerKey);
+  return cartSessionResponse(session, await getCart(session.ownerKey));
 }
 
-export async function DELETE(_request, context) {
+export async function DELETE(request, context) {
+  const session = readCartSession(request);
   const { id } = await context.params;
-  await removeRecipeCartItem(Number(id));
-  return Response.json(await getCart());
+  const itemId = Number(id);
+  if (!Number.isInteger(itemId) || itemId < 1)
+    return cartSessionResponse(
+      session,
+      { error: "Invalid cart item." },
+      { status: 400 },
+    );
+  await removeRecipeCartItem(itemId, session.ownerKey);
+  return cartSessionResponse(session, await getCart(session.ownerKey));
 }

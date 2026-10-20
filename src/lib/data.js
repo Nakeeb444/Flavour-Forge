@@ -8,7 +8,7 @@ import {
   recipeCartItems,
 } from "@/db/schema";
 import { ensureSeeded } from "@/db/seed";
-import { asc, eq, inArray, sql } from "drizzle-orm";
+import { and, asc, eq, inArray, sql } from "drizzle-orm";
 
 export async function getRecipes() {
   await ensureSeeded();
@@ -123,10 +123,11 @@ export async function getRecipeBySlug(slug) {
   };
 }
 
-export async function getCart() {
+export async function getCart(ownerKey, executor = db) {
+  if (!ownerKey) return { items: [], total: 0, count: 0 };
   await ensureSeeded();
   const [productRows, recipeRows] = await Promise.all([
-    db
+    executor
       .select({
         id: cartItems.id,
         productId: cartItems.productId,
@@ -139,8 +140,9 @@ export async function getCart() {
       .from(cartItems)
       .innerJoin(products, eq(products.id, cartItems.productId))
       .innerJoin(ingredients, eq(ingredients.id, products.ingredientId))
+      .where(eq(cartItems.ownerKey, ownerKey))
       .orderBy(asc(cartItems.id)),
-    db
+    executor
       .select({
         id: recipeCartItems.id,
         recipeId: recipeCartItems.recipeId,
@@ -154,6 +156,7 @@ export async function getCart() {
       })
       .from(recipeCartItems)
       .innerJoin(recipes, eq(recipes.id, recipeCartItems.recipeId))
+      .where(eq(recipeCartItems.ownerKey, ownerKey))
       .orderBy(asc(recipeCartItems.id)),
   ]);
   const items = [
@@ -175,7 +178,8 @@ export async function getCart() {
   };
 }
 
-export async function addRecipeToCart(recipeId, servings) {
+export async function addRecipeToCart(recipeId, servings, ownerKey) {
+  if (!ownerKey) return false;
   await ensureSeeded();
   const [recipe] = await db
     .select({ id: recipes.id, servings: recipes.servings })
@@ -183,10 +187,9 @@ export async function addRecipeToCart(recipeId, servings) {
     .where(eq(recipes.id, recipeId))
     .limit(1);
   if (!recipe) return false;
-  const safeServings = Math.max(
-    1,
-    Math.min(20, Number(servings) || recipe.servings),
-  );
+  const safeServings = servings ?? recipe.servings;
+  if (!Number.isInteger(safeServings) || safeServings < 1 || safeServings > 20)
+    return false;
   const links = await db
     .select({ ingredientId: recipeIngredients.ingredientId })
     .from(recipeIngredients)
@@ -220,18 +223,31 @@ export async function addRecipeToCart(recipeId, servings) {
         multiplier
     );
   }, 0);
+  if (
+    links.some(
+      (link) =>
+        !options.some((option) => option.ingredientId === link.ingredientId),
+    )
+  ) {
+    return false;
+  }
   await db
     .insert(recipeCartItems)
     .values({
+      ownerKey,
       recipeId,
       servings: safeServings,
       unitPrice,
       ingredientCount: links.length,
     })
     .onConflictDoUpdate({
-      target: [recipeCartItems.recipeId, recipeCartItems.servings],
+      target: [
+        recipeCartItems.ownerKey,
+        recipeCartItems.recipeId,
+        recipeCartItems.servings,
+      ],
       set: {
-        quantity: sql`${recipeCartItems.quantity} + 1`,
+        quantity: sql`LEAST(99, ${recipeCartItems.quantity} + 1)`,
         unitPrice,
         ingredientCount: links.length,
       },
@@ -239,44 +255,103 @@ export async function addRecipeToCart(recipeId, servings) {
   return true;
 }
 
-export async function setRecipeCartQuantity(id, quantity) {
+export async function setRecipeCartQuantity(id, quantity, ownerKey) {
+  if (!ownerKey) return false;
   if (quantity <= 0)
-    await db.delete(recipeCartItems).where(eq(recipeCartItems.id, id));
+    await db
+      .delete(recipeCartItems)
+      .where(
+        and(
+          eq(recipeCartItems.id, id),
+          eq(recipeCartItems.ownerKey, ownerKey),
+        ),
+      );
   else
     await db
       .update(recipeCartItems)
       .set({ quantity })
-      .where(eq(recipeCartItems.id, id));
+      .where(
+        and(
+          eq(recipeCartItems.id, id),
+          eq(recipeCartItems.ownerKey, ownerKey),
+        ),
+      );
+  return true;
 }
 
-export async function removeRecipeCartItem(id) {
-  await db.delete(recipeCartItems).where(eq(recipeCartItems.id, id));
+export async function removeRecipeCartItem(id, ownerKey) {
+  if (!ownerKey) return false;
+  await db
+    .delete(recipeCartItems)
+    .where(
+      and(
+        eq(recipeCartItems.id, id),
+        eq(recipeCartItems.ownerKey, ownerKey),
+      ),
+    );
+  return true;
 }
 
-export async function addToCart(productId, quantity) {
+export async function addToCart(productId, quantity, ownerKey) {
+  if (
+    !ownerKey ||
+    !Number.isInteger(productId) ||
+    productId < 1 ||
+    !Number.isInteger(quantity) ||
+    quantity < 1 ||
+    quantity > 99
+  ) {
+    return false;
+  }
+  const [product] = await db
+    .select({ id: products.id })
+    .from(products)
+    .where(eq(products.id, productId))
+    .limit(1);
+  if (!product) return false;
   await db
     .insert(cartItems)
-    .values({ productId, quantity })
+    .values({ ownerKey, productId, quantity })
     .onConflictDoUpdate({
-      target: cartItems.productId,
-      set: { quantity: sql`${cartItems.quantity} + ${quantity}` },
+      target: [cartItems.ownerKey, cartItems.productId],
+      set: {
+        quantity: sql`LEAST(99, ${cartItems.quantity} + ${quantity})`,
+      },
     });
+  return true;
 }
 
-export async function setCartQuantity(id, quantity) {
+export async function setCartQuantity(id, quantity, ownerKey) {
+  if (!ownerKey) return false;
   if (quantity <= 0) {
-    await db.delete(cartItems).where(eq(cartItems.id, id));
+    await db
+      .delete(cartItems)
+      .where(and(eq(cartItems.id, id), eq(cartItems.ownerKey, ownerKey)));
   } else {
-    await db.update(cartItems).set({ quantity }).where(eq(cartItems.id, id));
+    await db
+      .update(cartItems)
+      .set({ quantity })
+      .where(and(eq(cartItems.id, id), eq(cartItems.ownerKey, ownerKey)));
   }
+  return true;
 }
 
-export async function removeCartItem(id) {
-  await db.delete(cartItems).where(eq(cartItems.id, id));
+export async function removeCartItem(id, ownerKey) {
+  if (!ownerKey) return false;
+  await db
+    .delete(cartItems)
+    .where(and(eq(cartItems.id, id), eq(cartItems.ownerKey, ownerKey)));
+  return true;
 }
 
-export async function clearCart() {
-  await Promise.all([db.delete(cartItems), db.delete(recipeCartItems)]);
+export async function clearCart(ownerKey, executor = db) {
+  if (!ownerKey) return;
+  await Promise.all([
+    executor.delete(cartItems).where(eq(cartItems.ownerKey, ownerKey)),
+    executor
+      .delete(recipeCartItems)
+      .where(eq(recipeCartItems.ownerKey, ownerKey)),
+  ]);
 }
 
 export async function getAllProducts() {

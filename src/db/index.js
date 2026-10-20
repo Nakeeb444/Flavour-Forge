@@ -3,6 +3,8 @@ import { Pool } from "pg";
 import { DataType, newDb } from "pg-mem";
 
 const databaseUrl = process.env.DATABASE_URL;
+const isProductionBuild =
+  process.env.NEXT_PHASE === "phase-production-build";
 
 const patchPgMemCompatibility = (adapter) => {
   const originalAdaptQuery = adapter.Pool.prototype.adaptQuery;
@@ -90,20 +92,21 @@ const schemaSql = `
 
   CREATE TABLE IF NOT EXISTS cart_items (
     id SERIAL PRIMARY KEY,
-    product_id INTEGER NOT NULL UNIQUE REFERENCES products(id) ON DELETE CASCADE,
+    product_id INTEGER NOT NULL REFERENCES products(id) ON DELETE CASCADE,
+    owner_key TEXT,
     quantity INTEGER NOT NULL DEFAULT 1,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS recipe_cart_items (
     id SERIAL PRIMARY KEY,
+    owner_key TEXT,
     recipe_id INTEGER NOT NULL REFERENCES recipes(id) ON DELETE CASCADE,
     servings INTEGER NOT NULL,
     quantity INTEGER NOT NULL DEFAULT 1,
     unit_price INTEGER NOT NULL,
     ingredient_count INTEGER NOT NULL,
-    created_at TIMESTAMP NOT NULL DEFAULT NOW(),
-    UNIQUE(recipe_id, servings)
+    created_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 
   CREATE TABLE IF NOT EXISTS favorites (
@@ -155,6 +158,7 @@ const schemaSql = `
     total INTEGER NOT NULL,
     item_count INTEGER NOT NULL,
     items TEXT NOT NULL,
+    checkout_key TEXT,
     created_at TIMESTAMP NOT NULL DEFAULT NOW()
   );
 `;
@@ -176,19 +180,40 @@ const createFallbackPool = () => {
 };
 
 const startupPool = async () => {
+  if (isProductionBuild) {
+    return createFallbackPool().pool;
+  }
+
   if (!databaseUrl) {
+    if (process.env.NODE_ENV === "production") {
+      throw new Error(
+        "DATABASE_URL is required in production; refusing to start with temporary in-memory storage.",
+      );
+    }
     const { pool } = createFallbackPool();
     await pool.query(schemaSql);
+    console.warn(
+      "DATABASE_URL is not set; using temporary in-memory storage for this non-production environment.",
+    );
     return pool;
   }
 
-  const pool = new Pool({ connectionString: databaseUrl });
+  const pool = new Pool({
+    connectionString: databaseUrl,
+    connectionTimeoutMillis: 5000,
+  });
   try {
     await pool.query("SELECT 1");
     return pool;
   } catch (error) {
+    await pool.end();
+    if (process.env.NODE_ENV === "production") {
+      throw new Error("Could not connect to the production DATABASE_URL.", {
+        cause: error,
+      });
+    }
     console.warn(
-      "DATABASE_URL was not usable; falling back to the in-memory SQLite-compatible pg-mem database.",
+      "DATABASE_URL was not usable; using temporary in-memory storage for this non-production environment.",
       error.message,
     );
     const fallbackPool = createFallbackPool().pool;
@@ -199,16 +224,36 @@ const startupPool = async () => {
 
 const globalForDb = globalThis;
 const pool = globalForDb.__arenaNextJsPostgresqlPool ?? (await startupPool());
-await pool.query(`
-  CREATE TABLE IF NOT EXISTS app_migrations (
-    migration_name TEXT
-  )
-`);
-await pool.query(`
-  ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT;
-  ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
-  CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_unique ON users(firebase_uid);
-`);
+if (!isProductionBuild) {
+  await pool.query(`
+    CREATE TABLE IF NOT EXISTS app_migrations (
+      migration_name TEXT
+    )
+  `);
+  await pool.query(`
+    ALTER TABLE users ADD COLUMN IF NOT EXISTS firebase_uid TEXT;
+    ALTER TABLE users ALTER COLUMN password_hash DROP NOT NULL;
+    CREATE UNIQUE INDEX IF NOT EXISTS users_firebase_uid_unique ON users(firebase_uid);
+  `);
+  await pool.query(`
+    ALTER TABLE cart_items ADD COLUMN IF NOT EXISTS owner_key TEXT;
+    ALTER TABLE cart_items DROP CONSTRAINT IF EXISTS cart_items_product_id_key;
+    DROP INDEX IF EXISTS cart_items_product_id_unique;
+    CREATE UNIQUE INDEX IF NOT EXISTS cart_items_owner_product_unique
+      ON cart_items(owner_key, product_id);
+
+    ALTER TABLE recipe_cart_items ADD COLUMN IF NOT EXISTS owner_key TEXT;
+    ALTER TABLE recipe_cart_items
+      DROP CONSTRAINT IF EXISTS recipe_cart_items_recipe_id_servings_key;
+    DROP INDEX IF EXISTS recipe_cart_recipe_servings_unique;
+    CREATE UNIQUE INDEX IF NOT EXISTS recipe_cart_owner_recipe_servings_unique
+      ON recipe_cart_items(owner_key, recipe_id, servings);
+
+    ALTER TABLE orders ADD COLUMN IF NOT EXISTS checkout_key TEXT;
+    CREATE UNIQUE INDEX IF NOT EXISTS orders_user_checkout_key_unique
+      ON orders(user_id, checkout_key);
+  `);
+}
 
 if (process.env.NODE_ENV !== "production") {
   globalForDb.__arenaNextJsPostgresqlPool = pool;
