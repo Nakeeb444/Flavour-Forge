@@ -4,7 +4,7 @@ module.exports = {
     node: true,
   },
   parserOptions: {
-    "ecmaVersion": 2018,
+    "ecmaVersion": 2020,
   },
   extends: [
     "eslint:recommended",
@@ -13,7 +13,11 @@ module.exports = {
   rules: {
     "no-restricted-globals": ["error", "name", "length"],
     "prefer-arrow-callback": "error",
-    "quotes": ["error", "double", {"allowTemplateLiterals": true}],
+    "quotes": ["error", "double", { "allowTemplateLiterals": true }],
+    "linebreak-style": "off",
+    "indent": ["error", 2, { "SwitchCase": 1 }],
+    "max-len": ["error", 100, 2, { "ignoreUrls": true }],
+    "object-curly-spacing": ["error", "always"],
   },
   overrides: [
     {
