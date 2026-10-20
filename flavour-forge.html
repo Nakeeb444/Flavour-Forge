@@ -44,6 +44,16 @@ html {
   scroll-behavior: smooth;
 }
 
+button:focus-visible,
+a:focus-visible,
+input:focus-visible,
+select:focus-visible,
+textarea:focus-visible,
+[tabindex]:not([tabindex="-1"]):focus-visible {
+  outline: 2px solid var(--color-brand-600);
+  outline-offset: 3px;
+}
+
 body {
   background-color: var(--color-cream);
   color: var(--color-ink);
@@ -650,8 +660,8 @@ const NAV_GROUPS = [
       { key: "orders", label: "My Orders", compact: "Orders", icon: BoxIcon },
       {
         key: "favorites",
-        label: "Saved recipes",
-        compact: "Saved recipes",
+        label: "Favourites",
+        compact: "Favourites",
         icon: HeartIcon,
       },
       { key: "profile", label: "Profile", compact: "Profile", icon: UserIcon },
@@ -866,9 +876,11 @@ function TopBar({
       <div className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full border border-orange-100 bg-white px-3 py-2.5 shadow-sm sm:gap-3 sm:px-5 sm:py-3">
         <SearchIcon className="text-brand-500" width={22} height={22} />
         <input
+          type="search"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search for recipes, ingredients or cuisines..."
+          aria-label="Search recipes, ingredients, or cuisines"
           className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-stone-400 sm:text-[15px]"
         />
         <button
@@ -1112,37 +1124,37 @@ const HOME_CATEGORIES = [
   {
     title: "Vegetarian favourites",
     description: "Colourful mains for everyday cooking.",
-    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/paneer-butter-masala.jpg",
     filter: "Vegetarian",
   },
   {
     title: "Non-vegetarian favourites",
     description: "Chicken and egg recipes with bold, comforting flavours.",
-    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/butter-chicken.jpg",
     filter: "Non-Vegetarian",
   },
   {
     title: "Starters & snacks",
     description: "Small plates made for sharing.",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/veg-manchurian.jpg",
     filter: "Starters",
   },
   {
     title: "Everyday meals",
     description: "Comfort food for any day of the week.",
-    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/dal-tadka.jpg",
     filter: "Indian",
   },
   {
     title: "Sweet moments",
     description: "Desserts worth making time for.",
-    image: "https://images.unsplash.com/photo-1606313564200-e75d5e30476c?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/gulab-jamun.jpg",
     filter: "Desserts",
   },
   {
     title: "Cool treats",
     description: "Simple, refreshing ice cream ideas.",
-    image: "https://images.unsplash.com/photo-1563805042-7684c019e1cb?auto=format&fit=crop&w=1200&q=80",
+    image: "public/images/ice-cream-sundae.jpg",
     filter: "Ice Cream",
   },
 ];
@@ -1184,9 +1196,10 @@ function HomePage({ recipeCount, onBrowse, onShop, onHelp }) {
         <div className="relative min-h-[260px] bg-orange-100 md:min-h-[430px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=1200&q=80"
+            src="public/images/chicken-biryani.jpg"
             alt="Freshly cooked chicken biryani"
             className="absolute inset-0 h-full w-full object-cover"
+            fetchPriority="high"
           />
         </div>
       </section>
@@ -1216,6 +1229,7 @@ function HomePage({ recipeCount, onBrowse, onShop, onHelp }) {
                   src={category.image}
                   alt=""
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
                 />
               </span>
               <span className="flex items-center justify-between gap-3 px-4 py-4">
@@ -1507,12 +1521,12 @@ function ShopGrid({ products, onAddProduct }) {
 }
 
 // ---- src/components/views/LeftColumn.jsx ----
-const FILTERS = RECIPE_CATEGORIES;
+const FILTERS = ["All", ...RECIPE_CATEGORIES];
 
 function FilterChips({ filter, onFilter }) {
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label="Recipe types"
       className="scrollbar-thin flex gap-2 overflow-x-auto pb-1"
     >
@@ -1520,8 +1534,7 @@ function FilterChips({ filter, onFilter }) {
         <button
           key={f}
           type="button"
-          role="tab"
-          aria-selected={filter === f}
+          aria-pressed={filter === f}
           onClick={() => onFilter(f)}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium shadow-sm transition active:scale-90 ${
             filter === f
@@ -1638,7 +1651,7 @@ function LeftColumn(props) {
     return (
       <div className="animate-fade-up space-y-4">
         <h1 className="font-display flex items-center gap-2 text-[26px] font-bold">
-          <HeartIcon className="text-red-500" filled /> Saved recipes
+          <HeartIcon className="text-red-500" filled /> Favourites
         </h1>
         <RecipeGrid
           list={favs}
@@ -1680,7 +1693,7 @@ function LeftColumn(props) {
         </h1>
         {props.orders.length === 0 ? (
           <div className="card px-4 py-10 text-center text-sm text-stone-500">
-            No orders yet. Checkout to place your first order.
+            No order requests yet. Submit a request from your cart to see it here.
           </div>
         ) : (
           props.orders.map((o) => {
@@ -1691,9 +1704,9 @@ function LeftColumn(props) {
             return (
               <div key={o.id} className="card px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold">Order #{o.id}</p>
+                  <p className="text-sm font-bold">Order request #{o.id}</p>
                   <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                    Confirmed
+                    Recorded
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-stone-500">
@@ -1729,19 +1742,27 @@ function LeftColumn(props) {
         <UserIcon /> Profile
       </h1>
       <div className="card flex flex-col items-center px-4 py-8 text-center">
-        <span className="flex h-20 w-20 items-center justify-center rounded-full bg-gradient-to-br from-brand-200 to-brand-500 text-3xl font-bold text-white">
-          {props.user?.fullName.charAt(0).toUpperCase() ?? "G"}
+        <span className="flex h-20 w-20 items-center justify-center overflow-hidden rounded-full bg-gradient-to-br from-brand-200 to-brand-500 text-3xl font-bold text-white">
+          {props.user?.photoURL ? (
+            <img
+              src={props.user.photoURL}
+              alt={`${props.user.fullName}'s profile`}
+              className="h-full w-full object-cover"
+            />
+          ) : (
+            props.user?.fullName.charAt(0).toUpperCase() ?? "G"
+          )}
         </span>
         <p className="mt-3 text-lg font-bold">
           {props.user?.fullName ?? "Guest chef"}
         </p>
         <p className="text-sm text-stone-500">
           {props.user?.email ??
-            "Create an account at checkout to save your orders."}
+            "Create a free account to save your favourite recipes and orders."}
         </p>
         <div className="mt-6 grid w-full grid-cols-3 gap-2">
           {[
-            ["Favorites", favCount],
+            ["Favourites", favCount],
             ["Orders", props.orders.length],
             ["In Cart", props.cart.count],
           ].map(([l, v]) => (
@@ -1751,6 +1772,20 @@ function LeftColumn(props) {
             </div>
           ))}
         </div>
+        {props.user?.firebaseUid && (
+          <div className="mt-4 flex w-full flex-col gap-2">
+            <button
+              type="button"
+              disabled={props.notificationsBusy}
+              onClick={props.onEnableNotifications}
+              className="rounded-full border border-orange-200 px-4 py-2 text-sm font-semibold text-stone-600 transition hover:border-brand-400 hover:text-brand-700 disabled:cursor-wait disabled:opacity-60"
+            >
+              {props.notificationsBusy
+                ? "Enabling notifications…"
+                : "Enable push notifications"}
+            </button>
+          </div>
+        )}
         <button
           type="button"
           onClick={() => props.onChangeView("support")}
@@ -1781,10 +1816,33 @@ function LeftColumn(props) {
             Sign out
           </button>
         ) : (
-          <p className="mt-5 max-w-xs text-xs leading-relaxed text-stone-500">
-            Your cart is ready. Create an account when you check out to keep
-            your order history here.
-          </p>
+          <div className="mt-5 w-full">
+            <div className="grid grid-cols-2 gap-2">
+              <button
+                type="button"
+                onClick={props.onCreateAccount}
+                className="group flex items-center justify-center gap-1.5 rounded-full bg-gradient-to-r from-brand-500 to-amber-500 px-3 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl"
+              >
+                Create account
+                <ArrowRight
+                  width={16}
+                  height={16}
+                  className="transition-transform duration-300 group-hover:translate-x-1"
+                />
+              </button>
+              <button
+                type="button"
+                onClick={props.onSignIn}
+                className="rounded-full border border-orange-200 px-3 py-3 text-sm font-bold text-brand-700 transition hover:border-brand-400 hover:bg-orange-50"
+              >
+                Sign in
+              </button>
+            </div>
+            <p className="mt-3 text-xs leading-relaxed text-stone-500">
+              Save your favourite recipes and keep your order history in one
+              place.
+            </p>
+          </div>
         )}
       </div>
     </div>
@@ -2486,10 +2544,11 @@ function CartPage({
               disabled={busy}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-3 py-3 text-sm font-bold text-white hover:brightness-105 disabled:opacity-50"
             >
-              Proceed to Checkout <ArrowRight width={17} height={17} />
+              Record Order Request <ArrowRight width={17} height={17} />
             </button>
             <p className="mt-3 text-center text-xs text-stone-500">
-              Your recipe kit stays together in your order.
+              This records your request only; no payment or delivery is
+              arranged.
             </p>
           </aside>
         </div>
@@ -2499,14 +2558,36 @@ function CartPage({
 }
 
 // ---- src/components/account/CheckoutAuthModal.jsx ----
-function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
+function CheckoutAuthModal({
+  onClose,
+  onAuthenticated,
+  onOpenTerms,
+  flow = "checkout",
+  initialMode = "register",
+}) {
   const [acceptTerms, setAcceptTerms] = useState(false);
-  const [mode, setMode] = useState("register");
+  const [mode, setMode] = useState(initialMode);
   const [fullName, setFullName] = useState("");
   const [email, setEmail] = useState("");
   const [password, setPassword] = useState("");
   const [error, setError] = useState("");
   const [loading, setLoading] = useState(false);
+
+  async function createBackendSession(firebaseUser, details = {}) {
+    const response = await fetch("/api/auth/session", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({
+        idToken: await firebaseUser.getIdToken(),
+        ...details,
+      }),
+    });
+    const data = await response.json();
+    if (!response.ok || !data.user) {
+      throw new Error(data.error ?? "Could not finish setting up your account.");
+    }
+    return data.user;
+  }
 
   async function submit(event) {
     event.preventDefault();
@@ -2517,19 +2598,71 @@ function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
     }
     setLoading(true);
     try {
-      const response = await fetch(`/api/auth/${mode}`, {
-        method: "POST",
-        headers: { "Content-Type": "application/json" },
-        body: JSON.stringify({ fullName, email, password, acceptTerms }),
-      });
-      const data = await response.json();
-      if (!response.ok || !data.user) {
-        setError(data.error ?? "We couldn’t verify those details. Please try again.");
-        return;
+      let authenticatedUser;
+      if (mode === "register") {
+        const credential = await createUserWithEmailAndPassword(
+          auth,
+          email.trim(),
+          password,
+        );
+        await updateProfile(credential.user, { displayName: fullName.trim() });
+        authenticatedUser = await createBackendSession(credential.user, {
+          fullName: fullName.trim(),
+          acceptTerms,
+        });
+      } else {
+        try {
+          const credential = await signInWithEmailAndPassword(
+            auth,
+            email.trim(),
+            password,
+          );
+          authenticatedUser = await createBackendSession(credential.user);
+        } catch (firebaseError) {
+          if (
+            !["auth/invalid-credential", "auth/user-not-found"].includes(
+              firebaseError.code,
+            )
+          ) {
+            throw firebaseError;
+          }
+
+          const response = await fetch("/api/auth/login", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({ email, password }),
+          });
+          const data = await response.json();
+          if (!response.ok || !data.user) {
+            throw new Error(
+              data.error ?? "We couldn’t verify those details. Please try again.",
+            );
+          }
+          authenticatedUser = data.user;
+          try {
+            const credential = await createUserWithEmailAndPassword(
+              auth,
+              email.trim(),
+              password,
+            );
+            await updateProfile(credential.user, {
+              displayName: data.user.fullName,
+            });
+            authenticatedUser = await createBackendSession(credential.user, {
+              fullName: data.user.fullName,
+            });
+          } catch (linkError) {
+            if (linkError.code !== "auth/email-already-in-use") throw linkError;
+          }
+        }
       }
-      onAuthenticated(data.user);
-    } catch {
-      setError("Connection issue. Please try again in a moment.");
+      onAuthenticated(authenticatedUser);
+    } catch (authError) {
+      if (auth.currentUser) await signOut(auth);
+      setError(
+        authError.message ||
+          "Connection issue. Please try again in a moment.",
+      );
     } finally {
       setLoading(false);
     }
@@ -2559,14 +2692,20 @@ function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
         <div className="flex h-12 w-12 items-center justify-center rounded-2xl bg-orange-100 text-brand-600">
           <ChefHatIcon width={26} height={26} />
         </div>
-        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">Flavour Forge · checkout</p>
+        <p className="mt-5 text-xs font-bold uppercase tracking-[0.18em] text-brand-600">
+          Flavour Forge · {flow === "checkout" ? "checkout" : "profile"}
+        </p>
         <h2 id="checkout-auth-title" className="font-display mt-1 text-[30px] font-bold leading-tight text-ink">
           {mode === "register" ? "A little more flavour." : "Welcome back."}
         </h2>
         <p className="mt-2 max-w-sm text-sm leading-relaxed text-stone-600">
-          {mode === "register"
-            ? "Create your free account to place this order and keep your recipes and orders together."
-            : "Sign in to continue to your order and see your saved recipes."}
+          {flow === "checkout"
+            ? mode === "register"
+              ? "Create your free account to record this order request and keep it with your account."
+              : "Sign in to record this order request and see your favourites."
+            : mode === "register"
+              ? "Create your free account to save your favourite recipes and keep your orders together."
+              : "Sign in to see your orders and favourites."}
         </p>
 
         <div className="mt-6 grid grid-cols-2 rounded-xl bg-orange-50 p-1">
@@ -2644,8 +2783,7 @@ function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
                 I agree to the{" "}
                 <button type="button" onClick={onOpenTerms} className="font-semibold text-brand-600 underline-offset-2 hover:underline">
                   Terms &amp; Conditions
-                </button>{" "}
-                and Privacy Notice.
+                </button>.
               </span>
             </label>
           )}
@@ -2660,7 +2798,9 @@ function CheckoutAuthModal({ onClose, onAuthenticated, onOpenTerms }) {
             disabled={loading}
             className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 px-5 py-3.5 text-sm font-bold text-white shadow-lg shadow-orange-200/70 transition duration-300 hover:-translate-y-0.5 hover:shadow-xl disabled:cursor-wait disabled:opacity-60"
           >
-            {loading ? "One moment…" : mode === "register" ? "Create account & place order" : "Sign in & place order"}
+            {loading
+              ? "One moment…"
+              : `${mode === "register" ? "Create account" : "Sign in"}${flow === "checkout" ? " & record request" : ""}`}
             {!loading && <ArrowRight width={18} height={18} className="transition-transform duration-300 group-hover:translate-x-1" />}
           </button>
         </form>
@@ -2777,7 +2917,7 @@ function CustomerCare({ user, onToast, onOpenTerms }) {
       setSubject("");
       setOrderRef("");
       setMessage("");
-      onToast(`Ticket ${ticketRef(data.ticket.id)} received`);
+      onToast(`Ticket ${ticketRef(data.ticket.id)} saved`);
     } catch {
       setError("Connection issue. Please try again in a moment.");
     } finally {
@@ -2795,55 +2935,19 @@ function CustomerCare({ user, onToast, onOpenTerms }) {
           <HeadsetIcon /> Customer Care
         </h1>
         <p className="mt-1 text-sm text-stone-500">
-          We&apos;re here Monday to Saturday, 9am – 8pm IST. Most tickets get a
-          reply within 4 hours.
+          Submit a request for your records. This app does not currently route
+          tickets to a support inbox or send replies.
         </p>
       </div>
 
-      {/* contact channels */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          {
-            icon: PhoneIcon,
-            label: "Call us",
-            value: "+91 80000 12345",
-            hint: "Mon–Sat, 9am–8pm",
-            href: "tel:+918000012345",
-          },
-          {
-            icon: MailIcon,
-            label: "Email",
-            value: "care@flavourforge.app",
-            hint: "Reply within 24 hours",
-            href: "mailto:care@flavourforge.app",
-          },
-          {
-            icon: HeadsetIcon,
-            label: "Raise a ticket",
-            value: "Fastest for order issues",
-            hint: "Tracked in your account",
-            href: "#support-form",
-          },
-        ].map(({ icon: Icon, label, value, hint, href }) => (
-          <a
-            key={label}
-            href={href}
-            className="card group flex items-start gap-3 p-4 transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-brand-600">
-              <Icon width={20} height={20} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
-                {label}
-              </span>
-              <span className="block truncate text-sm font-bold text-ink">
-                {value}
-              </span>
-              <span className="block text-xs text-stone-500">{hint}</span>
-            </span>
-          </a>
-        ))}
+      <div className="card flex items-start gap-3 p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-brand-600">
+          <HeadsetIcon width={20} height={20} />
+        </span>
+        <p className="text-sm leading-relaxed text-stone-600">
+          Requests are stored in the app. A support contact channel and reply
+          workflow must be configured separately.
+        </p>
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
@@ -2852,8 +2956,8 @@ function CustomerCare({ user, onToast, onOpenTerms }) {
           <h2 className="text-[18px] font-bold">Send us a message</h2>
           <p className="mt-1 text-xs text-stone-500">
             {user
-              ? `Signed in as ${user.email}. Your tickets are saved to your account.`
-              : "You can write to us without an account — we will reply by email."}
+              ? `Signed in as ${user.email}. Your ticket record is saved to your account.`
+              : "You can create a ticket record without an account."}
           </p>
 
           {submitted && (
@@ -2862,9 +2966,9 @@ function CustomerCare({ user, onToast, onOpenTerms }) {
                 <CheckIcon width={12} height={12} strokeWidth={3} />
               </span>
               <span>
-                Thanks, we have received your message. Your reference is{" "}
-                <b>{ticketRef(submitted.id)}</b>. We will reply to{" "}
-                {currentContact.email} shortly.
+                Your ticket record is saved. Reference:{" "}
+                <b>{ticketRef(submitted.id)}</b>. It has not been sent to a
+                support inbox.
               </span>
             </div>
           )}
@@ -2980,7 +3084,7 @@ function CustomerCare({ user, onToast, onOpenTerms }) {
               disabled={sending}
               className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200/60 transition duration-300 hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
             >
-              {sending ? "Sending…" : "Send message"}
+              {sending ? "Saving…" : "Save ticket"}
               {!sending && (
                 <ArrowRight
                   width={18}
@@ -3065,15 +3169,15 @@ const SECTIONS = [
   {
     title: "1. Acceptance of these terms",
     body: [
-      "By creating an account, browsing recipes or placing an order on Flavour Forge you agree to these Terms & Conditions and our Privacy Notice. If you do not agree, please do not use the service.",
+      "By creating an account or using Flavour Forge you agree to these Terms & Conditions. If you do not agree, please do not use the service.",
       "We may update these terms from time to time. The date at the top of this page shows when they were last revised; continued use after a change means you accept the revised terms.",
     ],
   },
   {
     title: "2. Your account",
     body: [
-      "You must be at least 18 years old to create an account and place orders. Keep your password confidential — you are responsible for all activity on your account.",
-      "Please make sure the name and email address on your account are accurate so we can send order confirmations and reach you if there is a problem.",
+      "Keep your password confidential — you are responsible for activity on your account. The app does not currently verify a user's age.",
+      "Please make sure the name and email address on your account are accurate so your account records are correct.",
     ],
   },
   {
@@ -3084,24 +3188,22 @@ const SECTIONS = [
     ],
   },
   {
-    title: "4. Orders, pricing and payment",
+    title: "4. Order requests and prices",
     body: [
-      "Prices are shown in Indian Rupees (₹) and include applicable taxes unless stated otherwise. The 'estimated' price on a recipe is calculated from the default product for each ingredient and may change once you choose alternatives.",
-      "An order is accepted when you receive a confirmation and it appears under My Orders. We may cancel an order if a product is unavailable, in which case you will not be charged for that item.",
+      "Prices are shown in Indian Rupees (₹). A recipe-kit estimate uses the default product for each ingredient and may change if you choose alternatives.",
+      "Submitting the cart records an order request in your account. This version does not process payments, accept fulfilment, or confirm a purchase. No payment is taken.",
     ],
   },
   {
-    title: "5. Delivery",
+    title: "5. Delivery and fulfilment",
     body: [
-      "Delivery slots and areas are shown at checkout. Fresh and frozen items are packed to stay cool in transit; please refrigerate or freeze them promptly on arrival.",
-      "If nobody is available to receive the order, our delivery partner will attempt to contact you before leaving items in a safe place.",
+      "This version does not arrange delivery or fulfil orders. Do not rely on an order request as confirmation that ingredients will be supplied.",
     ],
   },
   {
-    title: "6. Returns, refunds and problems with an order",
+    title: "6. Support requests",
     body: [
-      "If an item is missing, damaged or not as described, contact Customer Care within 24 hours of delivery with your order number. We will replace the item or refund it to your original payment method within 5–7 working days.",
-      "Perishable goods cannot be returned once delivered unless they are faulty.",
+      "The Customer Care form stores a ticket record in the app. A support inbox and reply workflow are not configured in this version, so submitting a ticket does not guarantee a response.",
     ],
   },
   {
@@ -3113,8 +3215,8 @@ const SECTIONS = [
   {
     title: "8. Privacy",
     body: [
-      "We collect the information needed to run your account and fulfil orders: your name, email address, order history, favourites and support messages. Passwords are stored only as salted hashes.",
-      "We never sell your personal data. You can ask us to delete your account and associated data at any time through Customer Care.",
+      "The app stores account details, order requests, favourites and support ticket records needed for its features. Passwords for accounts managed by this app are stored as salted hashes; Firebase-managed accounts are authenticated by Firebase.",
+      "Account deletion is not currently available in the app. A database operator would need to process deletion requests.",
     ],
   },
   {
@@ -3126,7 +3228,7 @@ const SECTIONS = [
   {
     title: "10. Contact",
     body: [
-      "Questions about these terms? Reach us via Customer Care in the app, email care@flavourforge.app, or call +91 80000 12345 (Mon–Sat, 9am–8pm IST).",
+      "The in-app Customer Care form records requests, but this version does not route them to a support team. Configure and publish a verified support contact before launch.",
     ],
   },
 ];
@@ -3245,7 +3347,7 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
     window.scrollTo({ top: 0, behavior: "smooth" });
   }, []);
   const [search, setSearch] = useState("");
-  const [filter, setFilter] = useState("Vegetarian");
+  const [filter, setFilter] = useState("All");
   const [recipes, setRecipes] = useState(initialRecipes);
   const [recipe, setRecipe] = useState(initialRecipe);
   const [recipeOpen, setRecipeOpen] = useState(false);
@@ -3263,6 +3365,9 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
   const [user, setUser] = useState(null);
   const [authChecked, setAuthChecked] = useState(false);
   const [authOpen, setAuthOpen] = useState(false);
+  const [profileAuthOpen, setProfileAuthOpen] = useState(false);
+  const [profileAuthMode, setProfileAuthMode] = useState("register");
+  const [notificationsBusy, setNotificationsBusy] = useState(false);
   const [termsOpen, setTermsOpen] = useState(false);
   const theme = useSyncExternalStore(
     subscribeToTheme,
@@ -3280,6 +3385,7 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
   }, [theme]);
   const [toasts, setToasts] = useState([]);
   const toastId = useRef(0);
+  const checkoutKey = useRef(null);
 
   const toast = useCallback((message) => {
     const id = ++toastId.current;
@@ -3291,35 +3397,171 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
   }, []);
 
   useEffect(() => {
+    try {
+      initializeAppProtection();
+    } catch (error) {
+      console.error("Firebase App Check initialization failed.", error);
+      toast("Firebase App Check could not be initialized.");
+    }
     let alive = true;
-    fetch("/api/auth/me", { cache: "no-store" })
-      .then((response) => response.json())
-      .then((data) => {
-        if (alive) setUser(data.user);
-      })
-      .catch(() => {})
-      .finally(() => {
-        if (alive) setAuthChecked(true);
-      });
+    const unsubscribe = onAuthStateChanged(auth, async (firebaseUser) => {
+      const clearFavorites = () => {
+        setRecipes((items) =>
+          items.map((item) => ({ ...item, isFavorite: false })),
+        );
+        setRecipe((item) => item && { ...item, isFavorite: false });
+      };
+
+      if (!firebaseUser) {
+        clearFavorites();
+        try {
+          const response = await fetch("/api/auth/me", { cache: "no-store" });
+          const data = await response.json();
+          if (alive) setUser(data.user);
+        } catch {
+          if (alive) {
+            console.error("Could not load the signed-in account.");
+            setUser(null);
+          }
+        } finally {
+          if (alive) setAuthChecked(true);
+        }
+        return;
+      }
+
+      try {
+        const sessionResponse = await fetch("/api/auth/me", {
+          cache: "no-store",
+        });
+        const sessionData = await sessionResponse.json();
+        let sessionUser =
+          sessionData.user?.firebaseUid === firebaseUser.uid
+            ? sessionData.user
+            : null;
+
+        if (!sessionUser) {
+          const response = await fetch("/api/auth/session", {
+            method: "POST",
+            headers: { "Content-Type": "application/json" },
+            body: JSON.stringify({
+              idToken: await firebaseUser.getIdToken(),
+              fullName: firebaseUser.displayName ?? "",
+            }),
+          });
+          const data = await response.json();
+          if (response.ok && data.user) {
+            sessionUser = data.user;
+          } else if (!response.ok && response.status !== 404) {
+            toast(data.error ?? "Could not verify your account with the app server.");
+          }
+        }
+        if (sessionUser && alive) setUser(sessionUser);
+      } catch (error) {
+        if (alive) {
+          console.error("Could not synchronize the Firebase session.", error);
+          toast("Could not verify your account with the app server.");
+        }
+      }
+
+      try {
+        const snapshot = await getDocs(
+          collection(firestore, "users", firebaseUser.uid, "favorites"),
+        );
+        const favoriteIds = new Set(
+          snapshot.docs.map((favorite) => favorite.data().recipeId),
+        );
+        if (alive) {
+          setRecipes((items) =>
+            items.map((item) => ({
+              ...item,
+              isFavorite: favoriteIds.has(item.id),
+            })),
+          );
+          setRecipe((item) =>
+            item && { ...item, isFavorite: favoriteIds.has(item.id) },
+          );
+        }
+      } catch (error) {
+        clearFavorites();
+        if (alive) {
+          console.error("Could not load Firebase favourites.", error);
+          toast(
+            error.code === "permission-denied"
+              ? "Firebase denied access to your favourites. Check Firestore rules."
+              : "Could not load Favourites from Firebase.",
+          );
+        }
+      }
+
+      if (alive) setAuthChecked(true);
+    });
     return () => {
       alive = false;
+      unsubscribe();
     };
-  }, []);
+  }, [toast]);
+
+  useEffect(() => {
+    let unsubscribe;
+    listenForForegroundMessages((payload) => {
+      toast(payload.notification?.body ?? "You have a new Flavour Forge update.");
+    })
+      .then((stopListening) => {
+        unsubscribe = stopListening;
+      })
+      .catch(() => {
+        console.error("Could not attach the Firebase messaging listener.");
+      });
+    return () => unsubscribe?.();
+  }, [toast]);
 
   useEffect(() => {
     if (view === "orders" || view === "profile") {
       fetch("/api/orders", { cache: "no-store" })
-        .then((r) => r.json())
+        .then((response) => {
+          if (!response.ok) throw new Error("Could not load orders.");
+          return response.json();
+        })
         .then(setOrders)
-        .catch(() => {});
+        .catch((error) => {
+          console.error("Could not load account orders.", error);
+          toast("Could not load your orders. Please try again.");
+        });
     }
     if (view === "shop" && shopProducts.length === 0) {
-      fetch("/api/products")
-        .then((r) => r.json())
+      fetch("/api/products", { cache: "no-store" })
+        .then((response) => {
+          if (!response.ok) throw new Error("Could not load shop products.");
+          return response.json();
+        })
         .then(setShopProducts)
-        .catch(() => {});
+        .catch((error) => {
+          console.error("Could not load shop products.", error);
+          toast("Could not load shop items. Please try again.");
+        });
     }
-  }, [view, shopProducts.length, user?.id]);
+  }, [view, shopProducts.length, user?.id, toast]);
+
+  useEffect(() => {
+    let alive = true;
+    fetch("/api/cart", { cache: "no-store" })
+      .then((response) => {
+        if (!response.ok) throw new Error("Could not load the cart.");
+        return response.json();
+      })
+      .then((data) => {
+        if (alive) setCart(data);
+      })
+      .catch((error) => {
+        if (alive) {
+          console.error("Could not synchronize the cart.", error);
+          toast("Could not load your cart. Please try again.");
+        }
+      });
+    return () => {
+      alive = false;
+    };
+  }, [toast]);
 
   useEffect(() => {
     if (!recipeOpen) return;
@@ -3333,7 +3575,8 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
   const filtered = useMemo(() => {
     const query = search.trim().toLowerCase();
     return recipes.filter((item) => {
-      const matchesFilter = query || recipeMatchesCategory(item, filter);
+      const matchesFilter =
+        filter === "All" || recipeMatchesCategory(item, filter);
       const matchesSearch =
         !query ||
         item.name.toLowerCase().includes(query) ||
@@ -3378,60 +3621,56 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
 
   const toggleFavorite = useCallback(
     async (recipeId) => {
-      setRecipes((items) =>
-        items.map((item) =>
-          item.id === recipeId
-            ? { ...item, isFavorite: !item.isFavorite }
-            : item,
-        ),
-      );
-      setRecipe((item) =>
-        item && item.id === recipeId
-          ? { ...item, isFavorite: !item.isFavorite }
-          : item,
-      );
+      const firebaseUser = auth.currentUser;
+      if (!firebaseUser) {
+        toast("Sign in to add recipes to Favourites.");
+        setAuthOpen(true);
+        return;
+      }
+
       try {
-        const response = await fetch("/api/favorites", {
-          method: "POST",
-          headers: { "Content-Type": "application/json" },
-          body: JSON.stringify({ recipeId }),
+        const favoriteRef = doc(
+          firestore,
+          "users",
+          firebaseUser.uid,
+          "favorites",
+          recipes.find((item) => item.id === recipeId)?.slug ?? String(recipeId),
+        );
+        const isFavorite = await runTransaction(firestore, async (transaction) => {
+          const existing = await transaction.get(favoriteRef);
+          if (existing.exists()) {
+            transaction.delete(favoriteRef);
+            return false;
+          }
+          const selected = recipes.find((item) => item.id === recipeId);
+          if (!selected) throw new Error("Recipe is no longer available.");
+          transaction.set(favoriteRef, { recipeId, slug: selected.slug });
+          return true;
         });
-        if (!response.ok) throw new Error("Favorite request failed");
-        const data = await response.json();
         setRecipes((items) =>
           items.map((item) =>
             item.id === recipeId
-              ? { ...item, isFavorite: data.isFavorite }
+              ? { ...item, isFavorite }
               : item,
           ),
         );
         setRecipe((item) =>
           item && item.id === recipeId
-            ? { ...item, isFavorite: data.isFavorite }
+            ? { ...item, isFavorite }
             : item,
         );
         toast(
-          data.isFavorite
+          isFavorite
             ? "Saved to your favourites"
             : "Removed from favourites",
         );
-      } catch {
-        setRecipes((items) =>
-          items.map((item) =>
-            item.id === recipeId
-              ? { ...item, isFavorite: !item.isFavorite }
-              : item,
-          ),
-        );
-        setRecipe((item) =>
-          item && item.id === recipeId
-            ? { ...item, isFavorite: !item.isFavorite }
-            : item,
-        );
-        toast("Could not update favourites.");
+        void trackEvent("favorite_updated", { is_favorite: isFavorite });
+      } catch (error) {
+        console.error("Could not update the Firebase favourite.", error);
+        toast("Could not update Favourites. Please try again.");
       }
     },
-    [toast],
+    [recipes, toast],
   );
 
   const cartRequest = useCallback(
@@ -3478,8 +3717,6 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
     [addProduct],
   );
 
-  const factor = recipe ? servings / recipe.servings : 1;
-
   const buyAll = useCallback(async () => {
     if (!recipe) return;
     const result = await cartRequest(
@@ -3499,7 +3736,12 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
   const placeOrder = useCallback(async () => {
     setBusy(true);
     try {
-      const response = await fetch("/api/orders", { method: "POST" });
+      const idempotencyKey =
+        checkoutKey.current ?? (checkoutKey.current = crypto.randomUUID());
+      const response = await fetch("/api/orders", {
+        method: "POST",
+        headers: { "Idempotency-Key": idempotencyKey },
+      });
       if (response.status === 401) {
         setAuthOpen(true);
         return;
@@ -3507,13 +3749,17 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
       const data = await response.json();
       if (!response.ok || !data.order || !data.cart)
         throw new Error(data.error ?? "Checkout failed");
+      checkoutKey.current = null;
       setCart(data.cart);
       setOrders((current) => [data.order, ...current]);
-      toast(`Order #${data.order.id} placed. Thank you!`);
+      toast(
+        `Order request #${data.order.id} recorded. No payment was processed.`,
+      );
       setRecipeOpen(false);
       setView("orders");
-    } catch {
-      toast("Checkout could not be completed. Please try again.");
+    } catch (error) {
+      console.error("Checkout could not be completed.", error);
+      toast(error.message ?? "Checkout could not be completed. Please try again.");
     } finally {
       setBusy(false);
     }
@@ -3553,14 +3799,64 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
     [placeOrder, toast],
   );
 
-  const signOut = useCallback(async () => {
-    try {
-      await fetch("/api/auth/logout", { method: "POST" });
-    } finally {
-      setUser(null);
-      setOrders([]);
-      toast("You have signed out.");
+  const authenticateFromProfile = useCallback(
+    (authenticatedUser) => {
+      setUser(authenticatedUser);
+      setProfileAuthOpen(false);
+      toast(`Welcome, ${authenticatedUser.fullName.split(" ")[0]}. Your account is ready.`);
+    },
+    [toast],
+  );
+
+  const enableNotifications = useCallback(async () => {
+    const firebaseUser = auth.currentUser;
+    if (!firebaseUser) {
+      toast("Sign in with your Firebase account to enable notifications.");
+      return;
     }
+
+    setNotificationsBusy(true);
+    try {
+      const { token, tokenHash } = await enablePushNotifications();
+      await setDoc(
+        doc(firestore, "users", firebaseUser.uid, "devices", tokenHash),
+        { token },
+      );
+      const sendTestNotification = httpsCallable(
+        functions,
+        "sendTestNotification",
+      );
+      await sendTestNotification();
+      toast("Notifications are enabled. Check your browser notifications.");
+    } catch (error) {
+      console.error("Could not enable Firebase notifications.", error);
+      toast(error.message ?? "Could not enable notifications.");
+    } finally {
+      setNotificationsBusy(false);
+    }
+  }, [toast]);
+
+  const signOut = useCallback(async () => {
+    let signOutError;
+    try {
+      await firebaseSignOut(auth);
+    } catch (error) {
+      signOutError = error;
+    }
+    try {
+      const response = await fetch("/api/auth/logout", { method: "POST" });
+      if (!response.ok) throw new Error("The server session could not be cleared.");
+    } catch (error) {
+      signOutError ??= error;
+    }
+    if (signOutError) {
+      console.error("Could not clear all authentication sessions.", signOutError);
+      toast("Could not fully sign out. Please try again.");
+      return;
+    }
+    setUser(null);
+    setOrders([]);
+    toast("You have signed out.");
   }, [toast]);
 
   return (
@@ -3615,6 +3911,16 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
               onAddProduct={(id, quantity) => addProduct(id, quantity)}
               user={user}
               onSignOut={signOut}
+              onCreateAccount={() => {
+                setProfileAuthMode("register");
+                setProfileAuthOpen(true);
+              }}
+              onSignIn={() => {
+                setProfileAuthMode("login");
+                setProfileAuthOpen(true);
+              }}
+              onEnableNotifications={enableNotifications}
+              notificationsBusy={notificationsBusy}
               onToast={toast}
               onOpenTerms={() => setTermsOpen(true)}
               busy={busy}
@@ -3698,9 +4004,21 @@ function App({ initialRecipes, initialRecipe, initialCart }) {
           onOpenTerms={() => setTermsOpen(true)}
         />
       )}
+      {profileAuthOpen && (
+        <CheckoutAuthModal
+          flow="profile"
+          initialMode={profileAuthMode}
+          onClose={() => setProfileAuthOpen(false)}
+          onAuthenticated={authenticateFromProfile}
+          onOpenTerms={() => setTermsOpen(true)}
+        />
+      )}
       {termsOpen && <TermsModal onClose={() => setTermsOpen(false)} />}
 
       <div
+        role="status"
+        aria-live="polite"
+        aria-atomic="false"
         className={`pointer-events-none fixed bottom-20 left-1/2 z-[90] flex -translate-x-1/2 flex-col items-center gap-2 transition-[bottom] duration-500 ${dockVisible ? "lg:bottom-28" : "lg:bottom-6"}`}
       >
         {toasts.map((item) => (

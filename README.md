@@ -1,6 +1,6 @@
 <div align="center">
   <h1>Flavour Forge</h1>
-  <p><strong>Find a recipe. Gather what you need. Make something good.</strong></p>
+  <p><strong>From Cravings To Creations!</strong></p>
   <p>A recipe discovery and ingredient-shopping app built around the pleasure of cooking.</p>
 </div>
 
@@ -9,15 +9,24 @@
 - Explore a collection of Indian recipes, with search and category filters.
 - Open a recipe for its ingredients, serving sizes, timings, and cooking steps.
 - Add a complete recipe kit or individual ingredients to your cart.
-- Save favourites to your account and keep track of orders.
+- Save favourites to your account and review recorded order requests.
 - Use the responsive layout on desktop or mobile, with light and dark themes.
 - Contact customer care and review the site's terms.
 
+### Current order and support limitations
+
+Checkout currently records an order request in the account database; it does
+not process payment or arrange fulfilment or delivery. Customer Care tickets
+are stored in the database but are not sent to a support inbox. Configure and
+verify payment, fulfilment, and support services before offering the app as a
+production shopping service.
+
 ## Run the app
 
-The full application uses Next.js and Node.js 20.9 or later. PostgreSQL is
-recommended for persistent data. Without a usable `DATABASE_URL`, the app
-falls back to an in-memory database; data in that fallback is not persistent.
+The full application uses Next.js and Node.js 20.9 or later. PostgreSQL is required for persistent data. In non-production development,
+the app can use temporary in-memory storage if `DATABASE_URL` is missing or
+unavailable. Production refuses to start without a working `DATABASE_URL`;
+the in-memory fallback is never used there.
 
 1. Start PostgreSQL. Docker is one option:
 

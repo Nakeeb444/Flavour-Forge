@@ -163,10 +163,11 @@ export function CartPage({
               disabled={busy}
               className="mt-5 flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-brand-600 px-3 py-3 text-sm font-bold text-white hover:brightness-105 disabled:opacity-50"
             >
-              Proceed to Checkout <ArrowRight width={17} height={17} />
+              Record Order Request <ArrowRight width={17} height={17} />
             </button>
             <p className="mt-3 text-center text-xs text-stone-500">
-              Your recipe kit stays together in your order.
+              This records your request only; no payment or delivery is
+              arranged.
             </p>
           </aside>
         </div>

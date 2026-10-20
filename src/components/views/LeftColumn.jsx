@@ -15,12 +15,12 @@ import { RECIPE_CATEGORIES } from "@/components/recipes/categories";
 
 import { CustomerCare } from "@/components/support/CustomerCare";
 
-export const FILTERS = RECIPE_CATEGORIES;
+export const FILTERS = ["All", ...RECIPE_CATEGORIES];
 
 function FilterChips({ filter, onFilter }) {
   return (
     <div
-      role="tablist"
+      role="group"
       aria-label="Recipe types"
       className="scrollbar-thin flex gap-2 overflow-x-auto pb-1"
     >
@@ -28,8 +28,7 @@ function FilterChips({ filter, onFilter }) {
         <button
           key={f}
           type="button"
-          role="tab"
-          aria-selected={filter === f}
+          aria-pressed={filter === f}
           onClick={() => onFilter(f)}
           className={`shrink-0 rounded-full px-4 py-2 text-sm font-medium shadow-sm transition active:scale-90 ${
             filter === f
@@ -188,7 +187,7 @@ export function LeftColumn(props) {
         </h1>
         {props.orders.length === 0 ? (
           <div className="card px-4 py-10 text-center text-sm text-stone-500">
-            No orders yet. Checkout to place your first order.
+            No order requests yet. Submit a request from your cart to see it here.
           </div>
         ) : (
           props.orders.map((o) => {
@@ -199,9 +198,9 @@ export function LeftColumn(props) {
             return (
               <div key={o.id} className="card px-4 py-3">
                 <div className="flex items-center justify-between">
-                  <p className="text-sm font-bold">Order #{o.id}</p>
+                  <p className="text-sm font-bold">Order request #{o.id}</p>
                   <span className="rounded-full bg-green-100 px-2.5 py-0.5 text-xs font-semibold text-green-700">
-                    Confirmed
+                    Recorded
                   </span>
                 </div>
                 <p className="mt-0.5 text-xs text-stone-500">

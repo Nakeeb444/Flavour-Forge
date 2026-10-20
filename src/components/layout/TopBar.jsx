@@ -36,9 +36,11 @@ export function TopBar({
       <div className="relative flex min-w-0 flex-1 items-center gap-2 rounded-full border border-orange-100 bg-white px-3 py-2.5 shadow-sm sm:gap-3 sm:px-5 sm:py-3">
         <SearchIcon className="text-brand-500" width={22} height={22} />
         <input
+          type="search"
           value={search}
           onChange={(e) => onSearch(e.target.value)}
           placeholder="Search for recipes, ingredients or cuisines..."
+          aria-label="Search recipes, ingredients, or cuisines"
           className="min-w-0 flex-1 bg-transparent text-[13px] text-ink outline-none placeholder:text-stone-400 sm:text-[15px]"
         />
         <button

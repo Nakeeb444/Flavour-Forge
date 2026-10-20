@@ -6,8 +6,6 @@ import {
   CheckIcon,
   ChevronDown,
   HeadsetIcon,
-  MailIcon,
-  PhoneIcon,
 } from "@/components/ui/icons";
 
 const CATEGORIES = [
@@ -114,7 +112,7 @@ export function CustomerCare({ user, onToast, onOpenTerms }) {
       setSubject("");
       setOrderRef("");
       setMessage("");
-      onToast(`Ticket ${ticketRef(data.ticket.id)} received`);
+      onToast(`Ticket ${ticketRef(data.ticket.id)} saved`);
     } catch {
       setError("Connection issue. Please try again in a moment.");
     } finally {
@@ -132,55 +130,19 @@ export function CustomerCare({ user, onToast, onOpenTerms }) {
           <HeadsetIcon /> Customer Care
         </h1>
         <p className="mt-1 text-sm text-stone-500">
-          We&apos;re here Monday to Saturday, 9am – 8pm IST. Most tickets get a
-          reply within 4 hours.
+          Submit a request for your records. This app does not currently route
+          tickets to a support inbox or send replies.
         </p>
       </div>
 
-      {/* contact channels */}
-      <div className="grid gap-3 sm:grid-cols-3">
-        {[
-          {
-            icon: PhoneIcon,
-            label: "Call us",
-            value: "+91 80000 12345",
-            hint: "Mon–Sat, 9am–8pm",
-            href: "tel:+918000012345",
-          },
-          {
-            icon: MailIcon,
-            label: "Email",
-            value: "care@flavourforge.app",
-            hint: "Reply within 24 hours",
-            href: "mailto:care@flavourforge.app",
-          },
-          {
-            icon: HeadsetIcon,
-            label: "Raise a ticket",
-            value: "Fastest for order issues",
-            hint: "Tracked in your account",
-            href: "#support-form",
-          },
-        ].map(({ icon: Icon, label, value, hint, href }) => (
-          <a
-            key={label}
-            href={href}
-            className="card group flex items-start gap-3 p-4 transition-[transform,box-shadow] duration-500 hover:-translate-y-0.5 hover:shadow-md"
-          >
-            <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-brand-600">
-              <Icon width={20} height={20} />
-            </span>
-            <span className="min-w-0">
-              <span className="block text-xs font-semibold uppercase tracking-wide text-stone-500">
-                {label}
-              </span>
-              <span className="block truncate text-sm font-bold text-ink">
-                {value}
-              </span>
-              <span className="block text-xs text-stone-500">{hint}</span>
-            </span>
-          </a>
-        ))}
+      <div className="card flex items-start gap-3 p-4">
+        <span className="flex h-10 w-10 shrink-0 items-center justify-center rounded-xl bg-orange-50 text-brand-600">
+          <HeadsetIcon width={20} height={20} />
+        </span>
+        <p className="text-sm leading-relaxed text-stone-600">
+          Requests are stored in the app. A support contact channel and reply
+          workflow must be configured separately.
+        </p>
       </div>
 
       <div className="grid items-start gap-5 lg:grid-cols-[minmax(0,1.3fr)_minmax(280px,0.7fr)]">
@@ -189,8 +151,8 @@ export function CustomerCare({ user, onToast, onOpenTerms }) {
           <h2 className="text-[18px] font-bold">Send us a message</h2>
           <p className="mt-1 text-xs text-stone-500">
             {user
-              ? `Signed in as ${user.email}. Your tickets are saved to your account.`
-              : "You can write to us without an account — we will reply by email."}
+              ? `Signed in as ${user.email}. Your ticket record is saved to your account.`
+              : "You can create a ticket record without an account."}
           </p>
 
           {submitted && (
@@ -199,9 +161,9 @@ export function CustomerCare({ user, onToast, onOpenTerms }) {
                 <CheckIcon width={12} height={12} strokeWidth={3} />
               </span>
               <span>
-                Thanks, we have received your message. Your reference is{" "}
-                <b>{ticketRef(submitted.id)}</b>. We will reply to{" "}
-                {currentContact.email} shortly.
+                Your ticket record is saved. Reference:{" "}
+                <b>{ticketRef(submitted.id)}</b>. It has not been sent to a
+                support inbox.
               </span>
             </div>
           )}
@@ -317,7 +279,7 @@ export function CustomerCare({ user, onToast, onOpenTerms }) {
               disabled={sending}
               className="group flex w-full items-center justify-center gap-2 rounded-xl bg-gradient-to-r from-brand-500 to-amber-500 px-5 py-3 text-sm font-bold text-white shadow-lg shadow-orange-200/60 transition duration-300 hover:-translate-y-0.5 disabled:cursor-wait disabled:opacity-60"
             >
-              {sending ? "Sending…" : "Send message"}
+              {sending ? "Saving…" : "Save ticket"}
               {!sending && (
                 <ArrowRight
                   width={18}

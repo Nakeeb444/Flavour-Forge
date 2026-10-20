@@ -26,11 +26,23 @@ export async function POST(request) {
   try {
     body = await request.json();
   } catch {
-    return Response.json({ error: "Please sign in and try again." }, { status: 400 });
+    return Response.json(
+      { error: "Please sign in and try again." },
+      { status: 400 },
+    );
+  }
+  if (!body || typeof body !== "object" || Array.isArray(body)) {
+    return Response.json(
+      { error: "Please sign in and try again." },
+      { status: 400 },
+    );
   }
 
   if (typeof body.idToken !== "string" || body.idToken.length > 8192) {
-    return Response.json({ error: "Please sign in and try again." }, { status: 400 });
+    return Response.json(
+      { error: "Please sign in and try again." },
+      { status: 400 },
+    );
   }
 
   let firebaseUser;
@@ -43,7 +55,10 @@ export async function POST(request) {
     );
   }
   if (!firebaseUser?.localId || !firebaseUser.email) {
-    return Response.json({ error: "Your Firebase sign-in could not be verified." }, { status: 401 });
+    return Response.json(
+      { error: "Your Firebase sign-in could not be verified." },
+      { status: 401 },
+    );
   }
 
   const email = String(firebaseUser.email).trim().toLowerCase();
@@ -52,7 +67,10 @@ export async function POST(request) {
     .replace(/\s+/g, " ");
   const creatingAccount = body.acceptTerms === true;
   if (creatingAccount && (fullName.length < 2 || fullName.length > 80)) {
-    return Response.json({ error: "Enter your name (2–80 characters)." }, { status: 400 });
+    return Response.json(
+      { error: "Enter your name (2–80 characters)." },
+      { status: 400 },
+    );
   }
 
   let [user] = await db
@@ -62,7 +80,10 @@ export async function POST(request) {
     .limit(1);
 
   if (user && user.email !== email) {
-    return Response.json({ error: "Your Firebase account details do not match this profile." }, { status: 403 });
+    return Response.json(
+      { error: "Your Firebase account details do not match this profile." },
+      { status: 403 },
+    );
   }
 
   if (!user) {
@@ -80,7 +101,10 @@ export async function POST(request) {
         legacySession.id !== emailMatch.id
       ) {
         return Response.json(
-          { error: "An account already exists for this email. Sign in with its existing password or contact support." },
+          {
+            error:
+              "An account already exists for this email. Sign in with its existing password or contact support.",
+          },
           { status: 409 },
         );
       }
@@ -96,7 +120,10 @@ export async function POST(request) {
         });
     }
     if (!user && !creatingAccount) {
-      return Response.json({ error: "Create an account before signing in." }, { status: 404 });
+      return Response.json(
+        { error: "Create an account before signing in." },
+        { status: 404 },
+      );
     }
 
     if (!user) {

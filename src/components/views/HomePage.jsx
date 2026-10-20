@@ -12,25 +12,25 @@ const HOME_CATEGORIES = [
   {
     title: "Vegetarian favourites",
     description: "Colourful mains for everyday cooking.",
-    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/palak-paneer.jpg",
     filter: "Vegetarian",
   },
   {
     title: "Non-vegetarian favourites",
     description: "Chicken and egg recipes with bold, comforting flavours.",
-    image: "https://images.unsplash.com/photo-1603894584373-5ac82b2ae398?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/butter-chicken.jpg",
     filter: "Non-Vegetarian",
   },
   {
     title: "Starters & snacks",
     description: "Small plates made for sharing.",
-    image: "https://images.unsplash.com/photo-1601050690597-df0568f70950?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/veg-spring-rolls.jpg",
     filter: "Starters",
   },
   {
     title: "Everyday meals",
     description: "Comfort food for any day of the week.",
-    image: "https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=1200&q=80",
+    image: "/images/aloo-gobi.jpg",
     filter: "Indian",
   },
   {
@@ -49,22 +49,25 @@ const HOME_CATEGORIES = [
 
 export function HomePage({ recipeCount, onBrowse, onShop, onHelp }) {
   return (
-    <div className="animate-fade-up space-y-10 pb-4">
+    <div className="animate-fade-up space-y-6 pb-4 sm:space-y-10">
       <section className="grid overflow-hidden rounded-[28px] border border-orange-100 bg-white shadow-[0_12px_45px_rgba(90,45,20,0.08)] md:grid-cols-[1fr_0.9fr]">
-        <div className="flex flex-col justify-center px-6 py-10 sm:px-10 sm:py-14 lg:px-12">
-          <span className="text-xs font-bold uppercase tracking-[0.2em] text-brand-600">
+        <div className="flex flex-col justify-center px-6 py-5 sm:px-10 sm:py-14 lg:px-12">
+          <span className="text-xs font-bold uppercase tracking-widest text-brand-600 sm:tracking-[0.2em]">
             Welcome to Flavour Forge
           </span>
-          <h1 className="font-display mt-4 max-w-[550px] text-[clamp(2.3rem,4.2vw,4.5rem)] font-bold leading-[1.07] tracking-tight text-ink">
+          <p className="mt-1 text-sm font-semibold text-stone-500">
+            From Cravings To Creations!
+          </p>
+          <h1 className="font-display mt-2 max-w-[550px] text-[clamp(2.3rem,4.2vw,4.5rem)] font-bold leading-[1.07] tracking-tight text-ink sm:mt-4">
             Good food starts here.
           </h1>
-          <p className="mt-5 max-w-[460px] text-base leading-relaxed text-stone-600">
+          <p className="mt-2 max-w-[460px] text-sm leading-relaxed text-stone-600 sm:mt-5 sm:text-base">
             Find something delicious to make, gather the ingredients, and enjoy
             cooking at your own pace.
           </p>
-          <div className="mt-7 flex flex-wrap gap-3">
+          <div className="mt-4 flex flex-wrap gap-3 sm:mt-7">
             <button
-              onClick={() => onBrowse("Vegetarian")}
+              onClick={() => onBrowse("All")}
               className="inline-flex items-center gap-2 rounded-xl bg-brand-500 px-5 py-3 text-sm font-semibold text-white transition-colors duration-300 hover:bg-brand-600"
             >
               Browse recipes <ArrowRight width={17} height={17} />
@@ -76,17 +79,18 @@ export function HomePage({ recipeCount, onBrowse, onShop, onHelp }) {
               Shop ingredients
             </button>
           </div>
-          <p className="mt-6 flex items-center gap-2 text-xs text-stone-500">
+          <p className="mt-3 flex items-center gap-2 text-xs text-stone-500 sm:mt-6">
             <ClockIcon width={15} height={15} /> Explore {recipeCount} recipes
             at your own pace
           </p>
         </div>
-        <div className="relative min-h-[260px] bg-orange-100 md:min-h-[430px]">
+        <div className="relative min-h-24 bg-orange-100 md:min-h-[430px]">
           {/* eslint-disable-next-line @next/next/no-img-element */}
           <img
-            src="https://images.unsplash.com/photo-1631452180519-c014fe946bc7?auto=format&fit=crop&w=1200&q=80"
+            src="/images/chicken-biryani.jpg"
             alt="Freshly cooked chicken biryani"
             className="absolute inset-0 h-full w-full object-cover"
+            fetchPriority="high"
           />
         </div>
       </section>
@@ -110,12 +114,13 @@ export function HomePage({ recipeCount, onBrowse, onShop, onHelp }) {
               onClick={() => onBrowse(category.filter)}
               className="card group overflow-hidden text-left transition-[transform,box-shadow] duration-500 hover:-translate-y-1 hover:shadow-lg"
             >
-              <span className="block aspect-[16/10] overflow-hidden bg-orange-50">
+              <span className="block aspect-16/10 overflow-hidden bg-orange-50">
                 {/* eslint-disable-next-line @next/next/no-img-element */}
                 <img
                   src={category.image}
                   alt=""
                   className="h-full w-full object-cover transition-transform duration-700 group-hover:scale-105"
+                  loading="lazy"
                 />
               </span>
               <span className="flex items-center justify-between gap-3 px-4 py-4">

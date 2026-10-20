@@ -40,11 +40,13 @@ export async function verifyPassword(password, encoded) {
   return expected.length === actual.length && timingSafeEqual(expected, actual);
 }
 
-export async function createSession(userId) {
+export async function createSession(userId, executor = db) {
   const token = randomBytes(32).toString("hex");
   const maxAge = SESSION_DAYS * 24 * 60 * 60;
   const expiresAt = new Date(Date.now() + maxAge * 1000);
-  await db.insert(sessions).values({ userId, tokenHash: hashToken(token), expiresAt });
+  await executor
+    .insert(sessions)
+    .values({ userId, tokenHash: hashToken(token), expiresAt });
   return { token, maxAge };
 }
 
